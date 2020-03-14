@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-//	guuid "github.com/google/uuid"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,35 +11,19 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type event struct {
-	ID          string `json:"ID"`
-	Title       string `json:"Title"`
-	Description string `json:"Description"`
-}
-
 type user struct {
 	FirstName 	string `json:"first_name"`
 	LastName  	string `json:"last_name"`
 	ID			uuid.UUID `json:"id"`
 }
 
-type allUsers []user // slice of user
+type allUsers []user
 
 var users = allUsers{
 	{
 		FirstName: "Kasia",
 		LastName:  "Hart",
 		ID: uuid.Must(uuid.NewV4()),
-	},
-}
-
-type allEvents []event
-
-var events = allEvents{
-	{
-		ID:          "1",
-		Title:       "Introduction to Golang",
-		Description: "Come join us for a chance to learn how golang works and get to eventually try it out",
 	},
 }
 
@@ -63,8 +46,8 @@ func getAllUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
-func updateUser(w http.ResponseWriter, r *http.Request) { // has to send whole body with correct id
-	userID := mux.Vars(r)["id"] // is a string
+func updateUser(w http.ResponseWriter, r *http.Request) {
+	userID := mux.Vars(r)["id"]
 	var updatedUser user
 
 	reqBody, err := ioutil.ReadAll(r.Body)
@@ -93,7 +76,6 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
-
 
 func homeLink(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome home!")
