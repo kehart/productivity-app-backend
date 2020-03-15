@@ -46,6 +46,7 @@ func getSession() *mgo.Session {
 	return s
 }
 
+// Creates a new user with request data and inserts into DB
 func (uc UserController) createUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createUser called")
 
@@ -70,6 +71,7 @@ func (uc UserController) createUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newUser)
 }
 
+// Returns a list of all users
 func (uc UserController) getAllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getAllUsers called")
 
@@ -84,11 +86,14 @@ func (uc UserController) getAllUsers(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Gets a single user by ID
 func (uc UserController) getSingleUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getSingleUser called")
 	userID := mux.Vars(r)["id"]
 	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Print("error\n")
+		return
 	}
 	// Set up var that will hold requested user data
 	var user user
@@ -106,27 +111,33 @@ func (uc UserController) getSingleUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK) // TODO: superflous?
 }
 
+// Updates user by ID
 func (uc UserController) updateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: updateUser called")
 	userID := mux.Vars(r)["id"]
+	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Print("invalid id\n")
+		return
+	}
 	var updatedUser user
 
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Fprintf(w, "Kindly enter data with the user data in order to update")
-		fmt.Println("error")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	json.Unmarshal(reqBody, &updatedUser)
+	updatedUser.ID = objId
 
-	// search for user
-	for i, singleUser := range users {
-		if singleUser.ID.String() == userID {
-			singleUser.FirstName = updatedUser.FirstName
-			singleUser.LastName = updatedUser.LastName
-			users = append(users[:i], singleUser)
-			json.NewEncoder(w).Encode(singleUser)
-		}
+	err = uc.session.DB("admin-db").C("users").UpdateId(objId, updatedUser); if err!= nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Println(err)
 	}
+
+	json.NewEncoder(w).Encode(updatedUser)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (uc UserController) deleteUser(w http.ResponseWriter, r *http.Request) {
