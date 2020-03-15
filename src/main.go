@@ -142,14 +142,19 @@ func (uc UserController) updateUser(w http.ResponseWriter, r *http.Request) {
 
 func (uc UserController) deleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: deleteUser called")
-	userID := mux.Vars(r)["id"]
 
-	for i, singleUser := range users {
-		if singleUser.ID.String() == userID {
-			users = append(users[:i], users[i+1:]...)
-			fmt.Fprintf(w, "The event with ID %v has been deleted successfully", userID)
-		}
+	userID := mux.Vars(r)["id"]
+	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Print(err)
+		return
 	}
+
+	err = uc.session.DB("admin-db").C("users").RemoveId(objId); if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError) // try again for not found
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func homeLink(w http.ResponseWriter, r *http.Request) {
