@@ -8,8 +8,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"gopkg.in/mgo.v2"
 )
@@ -49,16 +47,23 @@ func getSession() *mgo.Session {
 }
 
 func (uc UserController) createUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("LOG: createUser called")
+
 	var newUser user
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Fprintf(w, "Kindly enter data with the  user only")
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	json.Unmarshal(reqBody, &newUser)
-	uc.session.DB("admin-db").C("users").Insert(newUser)
-
 	newUser.ID = primitive.NewObjectID()
+	err = uc.session.DB("admin-db").C("users").Insert(newUser); if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	users = append(users, newUser)
 	w.WriteHeader(http.StatusCreated)
 
@@ -66,36 +71,34 @@ func (uc UserController) createUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc UserController) getAllUsers(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("LOG: getAllUsers called")
 	json.NewEncoder(w).Encode(users)
 }
 
 func (uc UserController) getSingleUser(w http.ResponseWriter, r *http.Request) {
-	// Some hacky conversions to get right type for id
-	userID := []byte(mux.Vars(r)["id"])
-	rv := bson.RawValue{
-		Type: bsontype.ObjectID,
-		Value: 	userID,
-	}
-	objId, success := rv.ObjectIDOK(); if !success {
-		fmt.Println("error")
+	fmt.Println("LOG: getSingleUser called")
+	userID := mux.Vars(r)["id"]
+	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
+		fmt.Print("error\n")
 	}
 	// Set up var that will hold requested user data
 	var user user
 
-	_, err := ioutil.ReadAll(r.Body); if err != nil {
+	_, err = ioutil.ReadAll(r.Body); if err != nil {
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
-	})
+	}
 	// search for user
 	err = uc.session.DB("admin-db").C("users").FindId(objId).One(&user); if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	json.NewEncoder(w).Encode(user)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK) // TODO: superflous?
 }
 
 func (uc UserController) updateUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("LOG: updateUser called")
 	userID := mux.Vars(r)["id"]
 	var updatedUser user
 
@@ -118,6 +121,7 @@ func (uc UserController) updateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc UserController) deleteUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("LOG: deleteUser called")
 	userID := mux.Vars(r)["id"]
 
 	for i, singleUser := range users {
