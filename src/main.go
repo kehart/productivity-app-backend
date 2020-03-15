@@ -72,7 +72,16 @@ func (uc UserController) createUser(w http.ResponseWriter, r *http.Request) {
 
 func (uc UserController) getAllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getAllUsers called")
-	json.NewEncoder(w).Encode(users)
+
+	var results []user
+	err := uc.session.DB("admin-db").C("users").Find(nil).All(&results); if err != nil {
+		// TODO: what should actually happen here?
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// TODO: what do i return if empty
+	json.NewEncoder(w).Encode(results)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (uc UserController) getSingleUser(w http.ResponseWriter, r *http.Request) {
