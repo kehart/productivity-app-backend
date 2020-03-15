@@ -89,7 +89,7 @@ func (gh GoalHandler) GetSingleGoal(w http.ResponseWriter, r *http.Request) {
 
 // Returns list of all goals in DB // TODO change this to all ACTIVE goals
 func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: getAllGoals called")
+	fmt.Println("LOG: getGoals called")
 
 	var results []goal
 	err := gh.Session.DB("admin-db").C(GoalCollection).Find(nil).All(&results); if err != nil {
@@ -104,10 +104,11 @@ func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
 
 
 func (gh GoalHandler) UpdateGoal(w http.ResponseWriter, r *http.Request) {
-	// probably don't want to udpate; soft delete the old one and create a new 'updated record'
-}
 
+}
+// TODO decide if you want to hard or soft update
 
 func (gh GoalHandler) DeleteGoal(w http.ResponseWriter, r *http.Request) {
 	// probably a soft-delete
 }
+// TODO decide if you want to hard or soft delete

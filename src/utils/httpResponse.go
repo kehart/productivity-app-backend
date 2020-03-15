@@ -1,5 +1,9 @@
 package utils
 
-type HTTPResponse struct {
+type HTTPResponseObject struct {
 	// todo
+}
+
+type HTTPResponseCollection struct {
+	// TODO
 }
