@@ -3,12 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"gopkg.in/mgo.v2"
+	"io/ioutil"
+	"net/http"
 )
 
 type UserHandler struct {
@@ -29,7 +28,7 @@ func (uc UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var newUser user
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Fprintf(w, "Kindly enter data with the  user only")
+		fmt.Fprintf(w, "Kindly enter data with the user only")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

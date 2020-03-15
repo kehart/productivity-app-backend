@@ -3,12 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/productivity-app-backend/src/handlers"
 	"gopkg.in/mgo.v2"
-
 	"log"
 	"net/http"
-
-	"github.com/productivity-app-backend/src/handlers"
 )
 
 func getSession() *mgo.Session {
