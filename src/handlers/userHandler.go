@@ -25,7 +25,7 @@ type user struct {
 
 
 // Creates a new user with request data and inserts into DB
-func (uc UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createUser called")
 
 	var newUser user
@@ -37,7 +37,7 @@ func (uc UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	json.Unmarshal(reqBody, &newUser)
 	newUser.ID = primitive.NewObjectID()
-	err = uc.Session.DB("admin-db").C("users").Insert(newUser); if err != nil {
+	err = uh.Session.DB("admin-db").C("users").Insert(newUser); if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -48,11 +48,11 @@ func (uc UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns a list of all users
-func (uc UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getAllUsers called")
 
 	var results []user
-	err := uc.Session.DB("admin-db").C(UserCollection).Find(nil).All(&results); if err != nil {
+	err := uh.Session.DB("admin-db").C(UserCollection).Find(nil).All(&results); if err != nil {
 		// TODO: what should actually happen here?
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -63,7 +63,7 @@ func (uc UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // Gets a single user by ID
-func (uc UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
+func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getSingleUser called")
 	userID := mux.Vars(r)["id"]
 	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
@@ -79,7 +79,7 @@ func (uc UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// search for user
-	err = uc.Session.DB("admin-db").C(UserCollection).FindId(objId).One(&user); if err != nil {
+	err = uh.Session.DB("admin-db").C(UserCollection).FindId(objId).One(&user); if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -88,7 +88,7 @@ func (uc UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // Updates user by ID
-func (uc UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: updateUser called")
 	userID := mux.Vars(r)["id"]
 	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
@@ -107,7 +107,7 @@ func (uc UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &updatedUser)
 	updatedUser.ID = objId
 
-	err = uc.Session.DB("admin-db").C(UserCollection).UpdateId(objId, updatedUser); if err!= nil {
+	err = uh.Session.DB("admin-db").C(UserCollection).UpdateId(objId, updatedUser); if err!= nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(err)
 	}
@@ -116,7 +116,7 @@ func (uc UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (uc UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (uh UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: deleteUser called")
 
 	userID := mux.Vars(r)["id"]
@@ -126,7 +126,7 @@ func (uc UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = uc.Session.DB("admin-db").C(UserCollection).RemoveId(objId); if err != nil {
+	err = uh.Session.DB("admin-db").C(UserCollection).RemoveId(objId); if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError) // try again for not found
 	}

@@ -42,6 +42,7 @@ func main() {
 
 	// Goal Routing
 	router.HandleFunc("/goals", gh.CreateGoal).Methods("POST")
+	router.HandleFunc("/goals/{id}", gh.GetSingleGoal).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8080", router)) // create server
 }
