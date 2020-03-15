@@ -9,6 +9,9 @@ import (
 	"io/ioutil"
 	"net/http"
 )
+const (
+	UserCollection = "users"
+)
 
 type UserHandler struct {
 	Session *mgo.Session
@@ -26,8 +29,7 @@ func (uc UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createUser called")
 
 	var newUser user
-	reqBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
+	reqBody, err := ioutil.ReadAll(r.Body); if err != nil {
 		fmt.Fprintf(w, "Kindly enter data with the user only")
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -50,7 +52,7 @@ func (uc UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getAllUsers called")
 
 	var results []user
-	err := uc.Session.DB("admin-db").C("users").Find(nil).All(&results); if err != nil {
+	err := uc.Session.DB("admin-db").C(UserCollection).Find(nil).All(&results); if err != nil {
 		// TODO: what should actually happen here?
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -77,7 +79,7 @@ func (uc UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// search for user
-	err = uc.Session.DB("admin-db").C("users").FindId(objId).One(&user); if err != nil {
+	err = uc.Session.DB("admin-db").C(UserCollection).FindId(objId).One(&user); if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -105,7 +107,7 @@ func (uc UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &updatedUser)
 	updatedUser.ID = objId
 
-	err = uc.Session.DB("admin-db").C("users").UpdateId(objId, updatedUser); if err!= nil {
+	err = uc.Session.DB("admin-db").C(UserCollection).UpdateId(objId, updatedUser); if err!= nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(err)
 	}
@@ -124,7 +126,7 @@ func (uc UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = uc.Session.DB("admin-db").C("users").RemoveId(objId); if err != nil {
+	err = uc.Session.DB("admin-db").C(UserCollection).RemoveId(objId); if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError) // try again for not found
 	}
