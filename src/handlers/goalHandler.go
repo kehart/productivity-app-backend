@@ -87,9 +87,19 @@ func (gh GoalHandler) GetSingleGoal(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK) // TODO: superflous?
 }
 
-
+// Returns list of all goals in DB // TODO change this to all ACTIVE goals
 func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("LOG: getAllGoals called")
 
+	var results []goal
+	err := gh.Session.DB("admin-db").C(GoalCollection).Find(nil).All(&results); if err != nil {
+		// TODO: what should actually happen here?
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// TODO: what do i return if empty
+	json.NewEncoder(w).Encode(results)
+	w.WriteHeader(http.StatusOK)
 }
 
 
