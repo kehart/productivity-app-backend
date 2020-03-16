@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/thedevsaddam/govalidator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"gopkg.in/mgo.v2"
 	"io/ioutil"
@@ -25,25 +26,42 @@ type user struct {
 
 
 // Creates a new user with request data and inserts into DB
+/*
+Cases:
+-happy case
+-invalid data (empty strings for fname/lname)
+-missing fields
+ */
 func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createUser called")
-
 	var newUser user
-	reqBody, err := ioutil.ReadAll(r.Body); if err != nil {
-		fmt.Fprintf(w, "Kindly enter data with the user only")
+
+	// Validate and unmarshal to newUser
+	rules := govalidator.MapData{
+		"first_name": []string{"required"},
+		"last_name": []string{"required"},
+	}
+	opts := govalidator.Options{
+		Data:            &newUser,
+		Request:         r,
+		RequiredDefault: true, // idk what this does
+		Rules:           rules,
+	}
+	v := govalidator.New(opts)
+	e := v.ValidateJSON(); if len(e) > 0 {
+		validationError := map[string]interface{}{"validationError": e}
 		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(validationError)
 		return
 	}
 
-	json.Unmarshal(reqBody, &newUser)
 	newUser.ID = primitive.NewObjectID()
-	err = uh.Session.DB("admin-db").C("users").Insert(newUser); if err != nil {
+	err := uh.Session.DB("admin-db").C(UserCollection).Insert(newUser); if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-
 	json.NewEncoder(w).Encode(newUser)
 }
 
