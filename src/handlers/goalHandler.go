@@ -1,10 +1,10 @@
 package handlers
 
-
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/productivity-app-backend/src/utils"
 	"io/ioutil"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -115,39 +115,42 @@ func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Only permits changes to TargetValue
-// Update soft-deletes the existing goal and creates a new entry
-// Pass by id
-func (gh GoalHandler) UpdateGoal(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: updateGoal called")
-	goalId := mux.Vars(r)["id"]
-	objId, err := primitive.ObjectIDFromHex(goalId); if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Println(err)
-		return
-	}
-	var updatedGoal goal
-
-	reqBody, err := ioutil.ReadAll(r.Body) // read in patch json
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	json.Unmarshal(reqBody, &updatedGoal)
-	updatedGoal.ID = objId
-
-	err = gh.Session.DB("admin-db").C(GoalCollection).UpdateId(objId, updatedGoal); if err!= nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Println(err)
-	}
-
-	json.NewEncoder(w).Encode(updatedGoal)
-	w.WriteHeader(http.StatusOK)
-}
-// TODO decide if you want to hard or soft update
+// For now there is no update permitted
+// In the future, this should just report a status update, like active, completed, inprogress, etc.
+// Target value should not change, you should have to compelte one goal and create another
 
 // Hard-delete (all else should be update)
 func (gh GoalHandler) DeleteGoal(w http.ResponseWriter, r *http.Request) {
-	// probably a soft-delete
+	fmt.Println("LOG: deleteGoal called")
+
+	userID := mux.Vars(r)["id"]
+	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusBadRequest),
+			ErrorMessage: 	"Bad id syntax",
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errBody)
+		return
+	}
+
+	err = gh.Session.DB("admin-db").C(GoalCollection).RemoveId(objId); if err != nil {
+		if err.Error() == "not found" {
+			errBody := utils.HttpError{
+				ErrorCode:		http.StatusText(http.StatusNotFound),
+				ErrorMessage: 	"ID not found",
+			}
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(errBody)
+			return
+		}
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusInternalServerError),
+			ErrorMessage: 	"Server error",
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errBody)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
-// TODO decide if you want to hard or soft delete
