@@ -136,8 +136,8 @@ func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 
 // Updates user by ID; should be able to update first namd and last name
 /* Cases
--happy path
-TODO figure out which things i can update and pass in
+-happy path (change both or one field)
+-not found
  */
 func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: updateUser called")
@@ -156,9 +156,12 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Println(err)
-		// TODO custom error
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusBadRequest),
+			ErrorMessage: 	"Invalid syntax",
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errBody)
 		return
 	}
 	json.Unmarshal(reqBody, &updatedUser)
@@ -189,6 +192,9 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// cases
+// -happy path
+// not found
 func (uh UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: deleteUser called")
 
@@ -198,15 +204,28 @@ func (uh UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
 			ErrorMessage: 	"Bad id syntax",
 		}
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errBody)
 		return
 	}
 
 	err = uh.Session.DB("admin-db").C(UserCollection).RemoveId(objId); if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError) // try again for not found
-		// TODO custom error
+		if err.Error() == "not found" {
+			errBody := utils.HttpError{
+				ErrorCode:		http.StatusText(http.StatusNotFound),
+				ErrorMessage: 	"ID not found",
+			}
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(errBody)
+			return
+		}
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusInternalServerError),
+			ErrorMessage: 	"Server error",
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errBody)
+		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
