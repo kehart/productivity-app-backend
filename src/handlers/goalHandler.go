@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/utils"
-	"io/ioutil"
-
+	"github.com/thedevsaddam/govalidator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"gopkg.in/mgo.v2"
 	"net/http"
@@ -42,32 +41,66 @@ type goal struct {
 // TODO when altering, you should only ever change the TargetValue
 
 // Uses reqBody to create a new goal and inserts into DB
+/* Cases:
+-happy path :)
+-bad id :)
+-invalid fields (empty) :)
+-invalid fields (dont match type of GoalCategory or GoalType) :( TODO
+ */
 func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createGoal called")
 
 	// Read request
 	var newGoal goal
-	reqBody, err := ioutil.ReadAll(r.Body); if err != nil {
+
+	// Validate and unmarshal to newUser
+	rules := govalidator.MapData{
+		"user_id": []string{"required"},
+		"goal_category": []string{"required"},
+		"goal_name": []string{"required"},
+		"target_value": []string{"required"},
+	}
+	opts := govalidator.Options{
+		Data:            &newGoal,
+		Request:         r,
+		RequiredDefault: true, // idk what this does
+		Rules:           rules,
+	}
+	v := govalidator.New(opts)
+	e := v.ValidateJSON(); if len(e) > 0 {
+		validationError := map[string]interface{}{"validationError": e}
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusBadRequest),
+			ErrorMessage:	validationError,
+		}
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println(err)
+		json.NewEncoder(w).Encode(errBody)
 		return
 	}
 
-	json.Unmarshal(reqBody, &newGoal)
-
 	// Validate user_id passed in
 	count, err := gh.Session.DB("admin-db").C(UserCollection).FindId(newGoal.UserId).Count(); if count != 1 {
+		errBody := utils.HttpError{
+			ErrorCode: 		http.StatusText(http.StatusBadRequest),
+			ErrorMessage:	"user with id user_id not found",
+			}
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println("user not found")
+		json.NewEncoder(w).Encode(errBody)
 		return
 	}
 
 	// Insert goal into db
 	newGoal.ID = primitive.NewObjectID()
 	err = gh.Session.DB("admin-db").C(GoalCollection).Insert(newGoal); if err != nil {
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusInternalServerError),
+			ErrorMessage: 	"internal server error",
+		}
 		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errBody)
 		return
 	}
+
 	// Return success
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(newGoal)
@@ -79,25 +112,29 @@ func (gh GoalHandler) GetSingleGoal(w http.ResponseWriter, r *http.Request) {
 
 	goalID := mux.Vars(r)["id"]
 	objId, err := primitive.ObjectIDFromHex(goalID); if err != nil {
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusBadRequest),
+			ErrorMessage: 	"Bad id syntax",
+		}
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Println(err)
+		json.NewEncoder(w).Encode(errBody)
 		return
 	}
 	var goal goal
 
-	_, err = ioutil.ReadAll(r.Body); if err != nil {
-		w.WriteHeader(http.StatusBadRequest) // 400
-		return
-	}
-
 	// search for user
 	err = gh.Session.DB("admin-db").C(GoalCollection).FindId(objId).One(&goal); if err != nil {
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusNotFound),
+			ErrorMessage: 	"Goal with id ID not found", // TODO figure out string interpolation
+		}
 		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(errBody)
 		return
 	}
 
 	json.NewEncoder(w).Encode(goal)
-	w.WriteHeader(http.StatusOK) // TODO: superflous?
+	w.WriteHeader(http.StatusOK)
 }
 
 // Returns list of all goals in DB // TODO change this to all ACTIVE goals
@@ -106,18 +143,50 @@ func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
 
 	var results []goal
 	err := gh.Session.DB("admin-db").C(GoalCollection).Find(nil).All(&results); if err != nil {
-		// TODO: what should actually happen here?
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusInternalServerError),
+			ErrorMessage: 	"Server error",
+		}
 		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errBody)
 		return
 	}
-	// TODO: what do i return if empty
+
 	json.NewEncoder(w).Encode(results)
 	w.WriteHeader(http.StatusOK)
 }
+/* TODO
+func (gh GoalHandler) GetGoalsForUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("LOG: getGoalsForUser called")
+
+	var results []goal
+	queryStrVals := r.URL.Query() // probably should validate this
+	userId := queryStrVals["user_id"][0]
+	if  userId != "" {
+		objId, err := primitive.ObjectIDFromHex(userId); if err != nil {
+			// err
+		}
+		queryStrVals["user_id"] = []primitive.ObjectID {objId}
+	}
+
+	err := gh.Session.DB("admin-db").C(GoalCollection).Find(queryStrVals).All(&results); if err != nil {
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusInternalServerError),
+			ErrorMessage: 	"Server error",
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errBody)
+		return
+	}
+
+	json.NewEncoder(w).Encode(results)
+	w.WriteHeader(http.StatusOK)
+}
+*/
 
 // For now there is no update permitted
-// In the future, this should just report a status update, like active, completed, inprogress, etc.
-// Target value should not change, you should have to compelte one goal and create another
+// In the future, this should just report a status update, like active, completed, in progress, etc.
+// Target value should not change, you should have to complete one goal and create another
 
 // Hard-delete (all else should be update)
 func (gh GoalHandler) DeleteGoal(w http.ResponseWriter, r *http.Request) {
