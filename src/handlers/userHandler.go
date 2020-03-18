@@ -134,7 +134,7 @@ func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Updates user by ID
+// Updates user by ID; should be able to update first namd and last name
 /* Cases
 -happy path
 TODO figure out which things i can update and pass in
@@ -143,7 +143,7 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: updateUser called")
 	userID := mux.Vars(r)["id"]
 	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
-		errBody := utils.HttpError{
+		errBody := utils.HttpError {
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
 			ErrorMessage: 	"Bad id syntax",
 		}
@@ -152,6 +152,7 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var updatedUser user
+	var existingUser user
 
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -163,12 +164,28 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &updatedUser)
 	updatedUser.ID = objId
 
-	err = uh.Session.DB("admin-db").C(UserCollection).UpdateId(objId, updatedUser); if err!= nil {
+	err = uh.Session.DB("admin-db").C(UserCollection).FindId(objId).One(&existingUser); if err != nil {
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusNotFound),
+			ErrorMessage: 	"User with id ID not found", // TODO figure out string interpolation
+		}
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(errBody)
+		return
+	}
+	if len(updatedUser.FirstName) > 0 {
+		existingUser.FirstName = updatedUser.FirstName
+	}
+	if len(updatedUser.LastName) > 0 {
+		existingUser.LastName = updatedUser.LastName
+	}
+
+	err = uh.Session.DB("admin-db").C(UserCollection).UpdateId(objId, existingUser); if err!= nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(err)
 	}
 
-	json.NewEncoder(w).Encode(updatedUser)
+	json.NewEncoder(w).Encode(existingUser)
 	w.WriteHeader(http.StatusOK)
 }
 
