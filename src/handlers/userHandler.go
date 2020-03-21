@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/productivity-app-backend/src/managers"
 	"github.com/productivity-app-backend/src/utils"
 	"github.com/thedevsaddam/govalidator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,13 +18,9 @@ const (
 
 type UserHandler struct {
 	Session *mgo.Session
+	UserManager *managers.UserManager
 }
 
-type user struct {
-	FirstName 	string `json:"first_name" bson:"first_name"`
-	LastName  	string `json:"last_name" bson:"last_name"`
-	ID			primitive.ObjectID `json:"id" bson:"_id"`
-}
 
 // Creates a new user with request data and inserts into DB
 /*
@@ -34,7 +31,7 @@ Cases:
  */
 func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createUser called")
-	var newUser user
+	var newUser utils.User
 
 	// Validate and unmarshal to newUser
 	rules := govalidator.MapData{
@@ -59,14 +56,9 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser.ID = primitive.NewObjectID()
-	err := uh.Session.DB("admin-db").C(UserCollection).Insert(newUser); if err != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	"Server error",
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errBody)
+	err := uh.UserManager.CreateUser(&newUser); if err != nil {
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 
@@ -87,14 +79,10 @@ Cases:
 func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getAllUsers called")
 
-	var results []user
-	err := uh.Session.DB("admin-db").C(UserCollection).Find(nil).All(&results); if err != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	"Server error",
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errBody)
+	var results []utils.User
+	_, err := uh.UserManager.GetUsers(&results); if err != nil {
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 	json.NewEncoder(w).Encode(results)
@@ -110,52 +98,39 @@ func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getSingleUser called")
 	userID := mux.Vars(r)["id"]
-	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage: 	"Bad id syntax",
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errBody)
+	objId, err := formatObjectId(userID); if err != nil {
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 
-	var user user
-	err = uh.Session.DB("admin-db").C(UserCollection).FindId(objId).One(&user); if err != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	"User with id ID not found", // TODO figure out string interpolation
-		}
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(errBody)
+	var user utils.User
+	_, errLong := uh.UserManager.GetSingleUser(&user, objId); if errLong != nil {
+		w.WriteHeader(errLong.StatusCode)
+		json.NewEncoder(w).Encode(errLong.Error)
 		return
 	}
 	json.NewEncoder(w).Encode(user)
 	w.WriteHeader(http.StatusOK)
 }
 
-// Updates user by ID; should be able to update first namd and last name
+// Updates user by ID; should be able to update first name and last name
 /* Cases
 -happy path (change both or one field)
 -not found
  */
 func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: updateUser called")
+
 	userID := mux.Vars(r)["id"]
-	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
-		errBody := utils.HttpError {
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage: 	"Bad id syntax",
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errBody)
+	objId, errLong := formatObjectId(userID); if errLong != nil {
+		w.WriteHeader(errLong.StatusCode)
+		json.NewEncoder(w).Encode(errLong.Error)
 		return
 	}
-	var updatedUser user
-	var existingUser user
+	var updatedUser, existingUser utils.User
 
-	reqBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
+	reqBody, err := ioutil.ReadAll(r.Body); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
 			ErrorMessage: 	"Invalid syntax",
@@ -167,25 +142,10 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &updatedUser)
 	updatedUser.ID = objId
 
-	err = uh.Session.DB("admin-db").C(UserCollection).FindId(objId).One(&existingUser); if err != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	"User with id ID not found", // TODO figure out string interpolation
-		}
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(errBody)
+	_, errLong = uh.UserManager.UpdateUser(&existingUser, &updatedUser); if errLong != nil {
+		w.WriteHeader(errLong.StatusCode)
+		json.NewEncoder(w).Encode(errLong.Error)
 		return
-	}
-	if len(updatedUser.FirstName) > 0 {
-		existingUser.FirstName = updatedUser.FirstName
-	}
-	if len(updatedUser.LastName) > 0 {
-		existingUser.LastName = updatedUser.LastName
-	}
-
-	err = uh.Session.DB("admin-db").C(UserCollection).UpdateId(objId, existingUser); if err!= nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Println(err)
 	}
 
 	json.NewEncoder(w).Encode(existingUser)
@@ -199,33 +159,31 @@ func (uh UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: deleteUser called")
 
 	userID := mux.Vars(r)["id"]
-	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage: 	"Bad id syntax",
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errBody)
+	objId, err := formatObjectId(userID);  if err != nil {
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 
-	err = uh.Session.DB("admin-db").C(UserCollection).RemoveId(objId); if err != nil {
-		if err.Error() == "not found" {
-			errBody := utils.HttpError{
-				ErrorCode:		http.StatusText(http.StatusNotFound),
-				ErrorMessage: 	"ID not found",
-			}
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(errBody)
-			return
-		}
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	"Server error",
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errBody)
+	err = uh.UserManager.DeleteUser(objId); if err != nil {
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func formatObjectId(userID string) (primitive.ObjectID, *utils.HTTPErrorLong) {
+	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
+		errBody := utils.HttpError{
+			ErrorCode:    http.StatusText(http.StatusBadRequest),
+			ErrorMessage: "Bad id syntax",
+		}
+		fullErr := utils.HTTPErrorLong{
+			Error:      errBody,
+			StatusCode: http.StatusBadRequest,
+		}
+		return objId, &fullErr
+	}
+	return objId, nil
 }

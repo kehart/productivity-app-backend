@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/handlers"
+	"github.com/productivity-app-backend/src/managers"
 	"gopkg.in/mgo.v2"
 	"log"
 	"net/http"
@@ -28,7 +29,8 @@ func homeLink(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	s := getSession()
-	uh := handlers.UserHandler{Session: s}
+	userManager := 	managers.UserManager{Session: s}
+	uh := handlers.UserHandler{Session: s, UserManager: &userManager }
 	gh := handlers.GoalHandler{Session: s}
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", homeLink)
