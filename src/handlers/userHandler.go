@@ -7,7 +7,6 @@ import (
 	"github.com/productivity-app-backend/src/managers"
 	"github.com/productivity-app-backend/src/utils"
 	"github.com/thedevsaddam/govalidator"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io/ioutil"
 	"net/http"
 )
@@ -96,14 +95,13 @@ func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getSingleUser called")
 	userID := mux.Vars(r)["id"]
-	objId, err := formatObjectId(userID); if err != nil {
+	objId, err := utils.FormatObjectId(userID); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 
-	var user utils.User
-	_, errLong := uh.UserManager.GetSingleUser(&user, objId); if errLong != nil {
+	user, errLong := uh.UserManager.GetSingleUser(objId); if errLong != nil {
 		w.WriteHeader(errLong.StatusCode)
 		json.NewEncoder(w).Encode(errLong.Error)
 		return
@@ -121,7 +119,7 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: updateUser called")
 
 	userID := mux.Vars(r)["id"]
-	objId, errLong := formatObjectId(userID); if errLong != nil {
+	objId, errLong := utils.FormatObjectId(userID); if errLong != nil {
 		w.WriteHeader(errLong.StatusCode)
 		json.NewEncoder(w).Encode(errLong.Error)
 		return
@@ -157,7 +155,7 @@ func (uh UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: deleteUser called")
 
 	userID := mux.Vars(r)["id"]
-	objId, err := formatObjectId(userID);  if err != nil {
+	objId, err := utils.FormatObjectId(userID);  if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return
@@ -169,19 +167,4 @@ func (uh UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func formatObjectId(userID string) (primitive.ObjectID, *utils.HTTPErrorLong) {
-	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
-		errBody := utils.HttpError{
-			ErrorCode:    http.StatusText(http.StatusBadRequest),
-			ErrorMessage: "Bad id syntax",
-		}
-		fullErr := utils.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusBadRequest,
-		}
-		return objId, &fullErr
-	}
-	return objId, nil
 }

@@ -49,9 +49,10 @@ func (um UserManager) GetUsers(results *[]utils.User) (*[]utils.User, *utils.HTT
 	return results, nil
 }
 
-func (um UserManager) GetSingleUser(user *utils.User, objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
+func (um UserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: Manager.GetSingleUser called")
 
+	var user utils.User
 	err := um.Session.DB(utils.DbName).C(utils.UserCollection).FindId(objId).One(&user); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
@@ -63,7 +64,7 @@ func (um UserManager) GetSingleUser(user *utils.User, objId primitive.ObjectID) 
 		}
 		return nil, &fullErr
 	}
-	return user, nil
+	return &user, nil
 }
 
 // updatedUser contains all the information for the update, including the ID of the user
