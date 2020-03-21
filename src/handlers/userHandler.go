@@ -8,7 +8,6 @@ import (
 	"github.com/productivity-app-backend/src/utils"
 	"github.com/thedevsaddam/govalidator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"gopkg.in/mgo.v2"
 	"io/ioutil"
 	"net/http"
 )
@@ -17,7 +16,6 @@ const (
 )
 
 type UserHandler struct {
-	Session *mgo.Session
 	UserManager *managers.UserManager
 }
 

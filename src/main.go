@@ -30,7 +30,7 @@ func main() {
 
 	s := getSession()
 	userManager := 	managers.UserManager{Session: s}
-	uh := handlers.UserHandler{Session: s, UserManager: &userManager }
+	uh := handlers.UserHandler{ UserManager: &userManager }
 	gh := handlers.GoalHandler{Session: s}
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", homeLink)
