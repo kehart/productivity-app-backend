@@ -40,7 +40,7 @@ func main() {
 	router.HandleFunc("/users", uh.CreateUser).Methods("POST")
 	router.HandleFunc("/users", uh.GetAllUsers).Methods("GET")
 	router.HandleFunc("/users/{id}", uh.GetSingleUser).Methods("GET")
-	router.HandleFunc("/users/{id}", uh.UpdateUser).Methods("PUT") // TODO: change to patch
+	router.HandleFunc("/users/{id}", uh.UpdateUser).Methods("PATCH")
 	router.HandleFunc("/users/{id}", uh.DeleteUser).Methods("DELETE")
 
 	// Goal Routing

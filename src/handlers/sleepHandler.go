@@ -13,7 +13,6 @@ import (
 
 type SleepHandler struct {
 	SleepManager managers.SleepManager
-
 }
 
 func (sh SleepHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
@@ -61,8 +60,15 @@ func (sh SleepHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newSleepEvent)
 }
 
-func (sh SleepHandler) GetAllSleepEvents() {
+func (sh SleepHandler) GetAllEventsByType() {
 	// get all events with type = sleep
+	fmt.Println("LOG: GetAllEventsByType called")
+
+
+}
+
+func (sh SleepHandler) GetEventById() {
+
 }
 
 // get all sleep events for user
