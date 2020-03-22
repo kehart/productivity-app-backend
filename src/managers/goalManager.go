@@ -6,6 +6,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"gopkg.in/mgo.v2"
 	"net/http"
+	"net/url"
+	"strconv"
 )
 
 type GoalManager struct {
@@ -62,11 +64,22 @@ func (gm GoalManager) GetSingleGoal(objId primitive.ObjectID) (*utils.Goal, *uti
 	return &goal, nil
 }
 
-func (gm GoalManager) GetGoals() (*[]utils.Goal, *utils.HTTPErrorLong) {
+func (gm GoalManager) GetGoals(queryVals *url.Values) (*[]utils.Goal, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: GoalManager.GetGoals called")
 
+	queryValsMap := map[string][]string(*queryVals)
+	finalQueryVals := make(map[string]interface{}, len(queryValsMap))
+	for k, v := range queryValsMap {
+		if k == "target_value" {
+			finalQueryVals[k], _ = strconv.Atoi(v[0]) // TODO handle error better here
+		} else {
+			finalQueryVals[k] = v[0] // take the first value from the []string
+		}
+
+	}
+
 	var results []utils.Goal
-	err := gm.Session.DB(utils.DbName).C(utils.GoalCollection).Find(nil).All(&results); if err != nil {
+	err := gm.Session.DB(utils.DbName).C(utils.GoalCollection).Find(&finalQueryVals).All(&results); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",

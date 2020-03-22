@@ -77,7 +77,7 @@ Status `200`
 "id": "object_id"
 ```
 
-*Delete User* Remove user from application by specifying their user `id`.
+*Delete User*: Remove user from application by specifying their user `id`.
 
 `DELETE /users/{id}`
 

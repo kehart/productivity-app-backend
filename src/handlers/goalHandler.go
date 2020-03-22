@@ -90,7 +90,10 @@ func (gh GoalHandler) GetSingleGoal(w http.ResponseWriter, r *http.Request) {
 func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getGoals called")
 
-	results, err := gh.GoalManager.GetGoals(); if err != nil {
+	// Parse query string
+	queryVals := r.URL.Query() // returns map[string][]string
+
+	results, err := gh.GoalManager.GetGoals(&queryVals); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return
