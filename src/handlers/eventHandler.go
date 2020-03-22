@@ -9,3 +9,7 @@ type BaseEvent struct {
 	// dates
 	// goal category
 }
+
+// create record
+// get record by id
+// get records for user; filter by time

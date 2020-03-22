@@ -7,12 +7,10 @@ import (
 	"github.com/productivity-app-backend/src/managers"
 	"github.com/productivity-app-backend/src/utils"
 	"github.com/thedevsaddam/govalidator"
-	"gopkg.in/mgo.v2"
 	"net/http"
 )
 
 type GoalHandler struct {
-	Session *mgo.Session
 	GoalManager managers.GoalManager
 }
 
