@@ -33,6 +33,8 @@ func main() {
 	uh := handlers.UserHandler{ UserManager: &userManager }
 	goalHandler := managers.GoalManager{Session: s }
 	gh := handlers.GoalHandler{GoalManager:goalHandler}
+	eventManager := managers.EventManager{Session:s}
+	eh := handlers.EventHandler{SleepManager: eventManager}
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", homeLink)
 
@@ -47,6 +49,11 @@ func main() {
 	router.HandleFunc("/goals", gh.CreateGoal).Methods("POST")
 	router.HandleFunc("/goals/{id}", gh.GetSingleGoal).Methods("GET")
 	router.HandleFunc("/goals", gh.GetGoals).Methods("GET")
+
+	// Event Routing
+	router.HandleFunc("/events", eh.CreateEvent).Methods("POST")
+	router.HandleFunc("/events", eh.GetAllEventsByType).Methods("GET")
+	router.HandleFunc("/events/{id}", eh.GetSingleEvent).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8080", router)) // create server
 }

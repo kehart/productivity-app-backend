@@ -101,34 +101,6 @@ func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(results)
 	w.WriteHeader(http.StatusOK)
 }
-/* TODO
-func (gh GoalHandler) GetGoalsForUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: getGoalsForUser called")
-
-	var results []goal
-	queryStrVals := r.URL.Query() // probably should validate this
-	userId := queryStrVals["user_id"][0]
-	if  userId != "" {
-		objId, err := primitive.ObjectIDFromHex(userId); if err != nil {
-			// err
-		}
-		queryStrVals["user_id"] = []primitive.ObjectID {objId}
-	}
-
-	err := gh.Session.DB("admin-db").C(GoalCollection).Find(queryStrVals).All(&results); if err != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	"Server error",
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errBody)
-		return
-	}
-
-	json.NewEncoder(w).Encode(results)
-	w.WriteHeader(http.StatusOK)
-}
-*/
 
 // For now there is no update permitted
 // In the future, this should just report a status update, like active, completed, in progress, etc.

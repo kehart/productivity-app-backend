@@ -7,7 +7,6 @@ import (
 	"gopkg.in/mgo.v2"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
 type GoalManager struct {
@@ -67,17 +66,7 @@ func (gm GoalManager) GetSingleGoal(objId primitive.ObjectID) (*utils.Goal, *uti
 func (gm GoalManager) GetGoals(queryVals *url.Values) (*[]utils.Goal, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: GoalManager.GetGoals called")
 
-	queryValsMap := map[string][]string(*queryVals)
-	finalQueryVals := make(map[string]interface{}, len(queryValsMap))
-	for k, v := range queryValsMap {
-		if k == "target_value" {
-			finalQueryVals[k], _ = strconv.Atoi(v[0]) // TODO handle error better here
-		} else {
-			finalQueryVals[k] = v[0] // take the first value from the []string
-		}
-
-	}
-
+	finalQueryVals := utils.ParseQueryString(queryVals)
 	var results []utils.Goal
 	err := gm.Session.DB(utils.DbName).C(utils.GoalCollection).Find(&finalQueryVals).All(&results); if err != nil {
 		errBody := utils.HttpError{

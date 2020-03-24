@@ -42,6 +42,12 @@ const (
 	Refreshed 	Feeling = "refreshed"
 	Excited 	Feeling = "excited"
 )
+// TODO delete?
+type BaseEvent struct {
+	UserId       primitive.ObjectID `json:"user_id" bson:"user_id"`
+	// dates
+	// goal category
+}
 
 type SleepEvent struct {
 	Id 		primitive.ObjectID  `json:"id" bson:"_id"`
