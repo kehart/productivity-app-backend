@@ -22,12 +22,14 @@ const (
 	HoursSlept	GoalType = "hours_slept"
 )
 
+// How to deal with enums https://www.ribice.ba/golang-enums/
+
 type Goal struct {
-	ID           primitive.ObjectID `json:"id" bson:"_id"`
-	UserId       primitive.ObjectID `json:"user_id" bson:"user_id"`
-	GoalCategory GoalCategory       `json:"goal_category" bson:"goal_category"`
-	GoalType     GoalType           `json:"goal_name" bson:"goal_name"`
-	TargetValue  interface{}        `json:"target_value" bson:"target_value"`
+	ID           primitive.ObjectID `json:"id" bson:"_id" valid:"-"`
+	UserId       primitive.ObjectID `json:"user_id" bson:"user_id" valid:"type(mongoid)"`
+	GoalCategory GoalCategory       `json:"goal_category" bson:"goal_category" valid:"type(string)"`
+	GoalType     GoalType           `json:"goal_name" bson:"goal_name" valid:"type(string)"`
+	TargetValue  interface{}        `json:"target_value" bson:"target_value" valid:"required"`
 }
 
 
@@ -41,21 +43,15 @@ const (
 	Refreshed 	Feeling = "refreshed"
 	Excited 	Feeling = "excited"
 )
-// TODO delete?
-type BaseEvent struct {
-	UserId       primitive.ObjectID `json:"user_id" bson:"user_id"`
-	// dates
-	// goal category
-}
 
 type SleepEvent struct {
 	Id 		primitive.ObjectID  `json:"id" bson:"_id"`
-	UserId 	primitive.ObjectID  `json:"user_id" bson:"user_id"`
-	SleepTime 		time.Time	`json:"sleep_time" bson:"sleep_time"`
-	WakeupTime 		time.Time	`json:"wakeup_time" bson:"wakeup_time"`
-	WakeupFeeling 	Feeling		`json:"wakeup_feeling" bson:"wakeup_feeling"`
-	SleepFeeling 	Feeling		`json:"sleep_feeling" bson:"sleep_feeling"`
-	QualityOfSleep 	int 		`json:"quality_of_sleep" bson:"quality_of_sleep"` // [1, 10]
-	AlarmUsed 		bool		`json:"alarm_used" bson:"alarm_used"`
-	OwnBed 			bool		`json:"own_bed" bson:"own_bed"`
+	UserId 	primitive.ObjectID  `json:"user_id" bson:"user_id" valid:"type(mongoid)"`
+	SleepTime 		time.Time	`json:"sleep_time" bson:"sleep_time" valid:"rfc3339"` // maybe change to rfc3339WithoutZone
+	WakeupTime 		time.Time	`json:"wakeup_time" bson:"wakeup_time" valid:"rfc3339"`
+	WakeupFeeling 	Feeling		`json:"wakeup_feeling" bson:"wakeup_feeling" valid:"type(string), optional"` // custom; one of enum
+	SleepFeeling 	Feeling		`json:"sleep_feeling" bson:"sleep_feeling" valid:"type(string), optional"` // custom: one of enum
+	QualityOfSleep 	int 		`json:"quality_of_sleep" bson:"quality_of_sleep" valid:"type(itn), optional"` // [1, 10]
+	AlarmUsed 		bool		`json:"alarm_used" bson:"alarm_used" valid:"type(bool), optional"`
+	OwnBed 			bool		`json:"own_bed" bson:"own_bed" valid:"type(bool), optional"`
 }
