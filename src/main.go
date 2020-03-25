@@ -8,6 +8,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"log"
 	"net/http"
+	valid "github.com/asaskevich/govalidator"
 )
 
 func getSession() *mgo.Session {
@@ -21,12 +22,18 @@ func getSession() *mgo.Session {
 	return s
 }
 
+func initValidator() {
+	valid.SetFieldsRequiredByDefault(true)
+}
+
 
 func homeLink(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome home!")
 }
 
 func main() {
+
+	initValidator()
 
 	s := getSession()
 	userManager := 	managers.UserManager{Session: s}

@@ -3,10 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	valid "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/managers"
 	"github.com/productivity-app-backend/src/utils"
-	"github.com/thedevsaddam/govalidator"
 	"io/ioutil"
 	"net/http"
 )
@@ -30,30 +30,33 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createUser called")
 	var newUser utils.User
 
-	// Validate and unmarshal to newUser
-	rules := govalidator.MapData{
-		"first_name": []string{"required"},
-		"last_name": []string{"required"},
-	}
-	opts := govalidator.Options{
-		Data:            &newUser,
-		Request:         r,
-		RequiredDefault: true, // idk what this does
-		Rules:           rules,
-	}
-	v := govalidator.New(opts)
-	e := v.ValidateJSON(); if len(e) > 0 {
-		validationError := map[string]interface{}{"validationError": e}
+	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	validationError,
+			ErrorMessage:	"Bad request",
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errBody)
 		return
 	}
 
-	err := uh.UserManager.CreateUser(&newUser); if err != nil {
+	json.Unmarshal(reqBody, &newUser)
+	_, genErr = valid.ValidateStruct(&newUser) ; if genErr != nil {
+			errBody := utils.HttpError{
+				ErrorCode:		http.StatusText(http.StatusBadRequest),
+				ErrorMessage:	genErr,
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(errBody)
+			return
+	}
+	err := utils.ValidateUser(&newUser); if err != nil {
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
+		return
+	}
+
+	err = uh.UserManager.CreateUser(&newUser); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return
@@ -136,6 +139,15 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.Unmarshal(reqBody, &updatedUser)
+	_, genErr := valid.ValidateStruct(&updatedUser) ; if genErr != nil {
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusBadRequest),
+			ErrorMessage:	genErr,
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errBody)
+		return
+	}
 	updatedUser.ID = objId
 
 	_, errLong = uh.UserManager.UpdateUser(&existingUser, &updatedUser); if errLong != nil {
