@@ -75,9 +75,10 @@ func (gt GoalType) isValid(target interface{}) bool {
 	switch gt {
 	case HoursSlept:
 		tType := fmt.Sprintf("%T", target)
-		if tType =="int" {
+		if tType =="int" || tType == "float64" {
 			return true
 		}
+		fmt.Println(tType)
 		return false
 	}
 	return false

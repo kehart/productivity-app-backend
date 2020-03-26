@@ -3,10 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	valid "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/managers"
 	"github.com/productivity-app-backend/src/utils"
-	"github.com/thedevsaddam/govalidator"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -25,38 +26,68 @@ type GoalHandler struct {
 -invalid fields (empty) :)
 -invalid fields (dont match type of GoalCategory or GoalType) :( TODO
  */
-func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: createGoal called")
 
-	// Read request
-	var newGoal utils.Goal
+/*	var newUser utils.User
 
-	// Validate and unmarshal to newUser
-	rules := govalidator.MapData{
-		"user_id": []string{"required"},
-		"goal_category": []string{"required"},
-		"goal_name": []string{"required"},
-		"target_value": []string{"required"},
-	}
-	opts := govalidator.Options{
-		Data:            &newGoal,
-		Request:         r,
-		RequiredDefault: true, // idk what this does
-		Rules:           rules,
-	}
-	v := govalidator.New(opts)
-	e := v.ValidateJSON(); if len(e) > 0 {
-		validationError := map[string]interface{}{"validationError": e}
+	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	validationError,
+			ErrorMessage:	"Bad request",
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errBody)
 		return
 	}
 
-	_, err := gh.GoalManager.CreateGoal(&newGoal); if err != nil {
+	json.Unmarshal(reqBody, &newUser)
+	_, genErr = valid.ValidateStruct(&newUser) ; if genErr != nil {
+			errBody := utils.HttpError{
+				ErrorCode:		http.StatusText(http.StatusBadRequest),
+				ErrorMessage:	genErr,
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(errBody)
+			return
+	}
+	err := utils.ValidateUser(&newUser); if err != nil {
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
+		return
+	}*/
+func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("LOG: createGoal called")
+
+	// Read request
+	var newGoal utils.Goal
+
+	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusBadRequest),
+			ErrorMessage:	"Bad request",
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errBody)
+		return
+	}
+
+	json.Unmarshal(reqBody, &newGoal)
+	_, genErr = valid.ValidateStruct(&newGoal) ; if genErr != nil {
+		fmt.Println(genErr)
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusBadRequest),
+			ErrorMessage:	genErr,
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errBody)
+		return
+	}
+	err := utils.ValidateGoal(&newGoal); if err != nil {
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
+		return
+	}
+
+	_, err = gh.GoalManager.CreateGoal(&newGoal); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return

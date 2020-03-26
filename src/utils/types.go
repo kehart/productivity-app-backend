@@ -26,9 +26,9 @@ const (
 
 type Goal struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id" valid:"-"`
-	UserId       primitive.ObjectID `json:"user_id" bson:"user_id" valid:"type(mongoid)"`
-	GoalCategory GoalCategory       `json:"goal_category" bson:"goal_category" valid:"type(string)"`
-	GoalType     GoalType           `json:"goal_name" bson:"goal_name" valid:"type(string)"`
+	UserId       primitive.ObjectID `json:"user_id" bson:"user_id" valid:"required"` // valid:"type(mongoid)
+	GoalCategory GoalCategory       `json:"goal_category" bson:"goal_category" valid:"required"` //valid:"type(string)"
+	GoalType     GoalType           `json:"goal_name" bson:"goal_name" valid:"required"` // valid:"type(string)"
 	TargetValue  interface{}        `json:"target_value" bson:"target_value" valid:"required"`
 }
 
