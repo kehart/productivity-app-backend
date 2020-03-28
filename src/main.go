@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/handlers"
 	"github.com/productivity-app-backend/src/managers"
+	"github.com/productivity-app-backend/src/utils"
 	"gopkg.in/mgo.v2"
 	"log"
 	"net/http"
@@ -36,13 +37,15 @@ func main() {
 	initValidator()
 
 	s := getSession()
-	userManager := 	managers.UserManager{Session: s}
+	userManager := 	managers.UserManager{Session: s, Store: utils.MongoDb{s}}
 	uh := handlers.UserHandler{ UserManager: &userManager }
 	goalHandler := managers.GoalManager{Session: s }
 	gh := handlers.GoalHandler{GoalManager:goalHandler}
 	eventManager := managers.EventManager{Session:s}
 	eh := handlers.EventHandler{SleepManager: eventManager}
+
 	router := mux.NewRouter().StrictSlash(true)
+
 	router.HandleFunc("/", homeLink)
 
 	// User Routing

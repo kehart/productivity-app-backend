@@ -92,4 +92,11 @@ func (f Feeling) isValid() bool {
 	return false
 }
 
+/*
+Notes for writing tests:
+- file must end in _test.go
+- put file in same package as the one being tested
+- be in a func with signature func TestXxx(*testing.T)
+- run test with go test
+ */
 

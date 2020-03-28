@@ -1,0 +1,15 @@
+package	managers
+
+import "testing"
+
+func TestInsertEvent(t *testing.T) {
+
+}
+
+func TestGetEvents(t *testing.T) {
+
+}
+
+func TestGetSingleEvent(t *testing.T) {
+
+}

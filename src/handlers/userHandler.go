@@ -10,22 +10,13 @@ import (
 	"io/ioutil"
 	"net/http"
 )
-const (
-	UserCollection = "users"
-)
 
 type UserHandler struct {
 	UserManager *managers.UserManager
 }
 
 
-// Creates a new user with request data and inserts into DB
-/*
-Cases:
--happy case
--invalid data (empty strings for fname/lname)
--missing fields
- */
+// Description
 func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createUser called")
 	var newUser utils.User
@@ -70,12 +61,7 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// Returns a list of all users
-/*
-Cases:
--happy
--empty -> returns nil
- */
+// Description
 func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getAllUsers called")
 
@@ -89,12 +75,7 @@ func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Gets a single user by ID
-/* Cases
--happy path
--not found
--bad syntax for id? or empty
- */
+// Description
 func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getSingleUser called")
 	userID := mux.Vars(r)["id"]
@@ -113,11 +94,7 @@ func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Updates user by ID; should be able to update first name and last name
-/* Cases
--happy path (change both or one field)
--not found
- */
+// Description
 func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: updateUser called")
 
@@ -160,9 +137,7 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// cases
-// -happy path
-// not found
+// Description
 func (uh UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: deleteUser called")
 

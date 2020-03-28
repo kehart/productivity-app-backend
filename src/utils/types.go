@@ -55,3 +55,22 @@ type SleepEvent struct {
 	AlarmUsed 		bool		`json:"alarm_used" bson:"alarm_used" valid:"type(bool), optional"`
 	OwnBed 			bool		`json:"own_bed" bson:"own_bed" valid:"type(bool), optional"`
 }
+
+
+type (
+	// db abstraction [users so far]
+	Store interface {
+		Create(user *User) error
+		Delete(Id primitive.ObjectID) error
+		FindById(id primitive.ObjectID, user *User) error
+		FindAll(users *[]User) error
+		Update(id primitive.ObjectID, user *User) error
+	}
+
+	// The app 'context'; not sure if i need this
+	//app struct {
+	//	MongoDb store
+	//}
+
+	// Other types which are the models
+)

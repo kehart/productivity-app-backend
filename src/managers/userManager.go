@@ -10,6 +10,7 @@ import (
 
 type UserManager struct {
 	Session *mgo.Session
+	Store utils.Store
 }
 
 func (um UserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
@@ -18,7 +19,7 @@ func (um UserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
 	// Assign new ID to new user
 	newUser.ID = primitive.NewObjectID()
 	// Insert user into DB
-	err := um.Session.DB(utils.DbName).C(utils.UserCollection).Insert(newUser); if err != nil {
+	err := um.Store.Create(newUser); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",
@@ -35,7 +36,7 @@ func (um UserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
 func (um UserManager) GetUsers(results *[]utils.User) (*[]utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: Manager.GetUsers called")
 
-	err := um.Session.DB(utils.DbName).C(utils.UserCollection).Find(nil).All(results); if err != nil {
+	err := um.Store.FindAll(results); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",
@@ -53,10 +54,10 @@ func (um UserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *uti
 	fmt.Println("LOG: Manager.GetSingleUser called")
 
 	var user utils.User
-	err := um.Session.DB(utils.DbName).C(utils.UserCollection).FindId(objId).One(&user); if err != nil {
+	err := um.Store.FindById(objId, &user); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	"User with id ID not found", // TODO figure out string interpolation
+			ErrorMessage: 	"User with id `objId` not found", // TODO figure out string interpolation
 		}
 		fullErr := utils.HTTPErrorLong {
 			Error:      errBody,
@@ -72,10 +73,10 @@ func (um UserManager) UpdateUser(existingUser *utils.User, updatedUser *utils.Us
 	fmt.Println("LOG: Manager.UpdateUser called")
 
 	// Read the current state of the user from the DB and place data into existingUser
-	err := um.Session.DB(utils.DbName).C(utils.UserCollection).FindId(updatedUser.ID).One(existingUser); if err != nil {
+	err := um.Store.FindById(updatedUser.ID, existingUser); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	"User with id ID not found", // TODO figure out string interpolation
+			ErrorMessage: 	"User with id `updatedUser.ID` not found", // TODO figure out string interpolation
 		}
 		fullErr := utils.HTTPErrorLong{
 			Error:      errBody,
@@ -93,7 +94,7 @@ func (um UserManager) UpdateUser(existingUser *utils.User, updatedUser *utils.Us
 	}
 	existingUser.ID = updatedUser.ID
 
-	err = um.Session.DB(utils.DbName).C(utils.UserCollection).UpdateId(existingUser.ID, existingUser); if err != nil {
+	err = um.Store.Update(existingUser.ID, existingUser); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:    http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: "Server error",
@@ -110,7 +111,7 @@ func (um UserManager) UpdateUser(existingUser *utils.User, updatedUser *utils.Us
 func (um UserManager) DeleteUser(objId primitive.ObjectID) *utils.HTTPErrorLong {
 	fmt.Println("LOG: Manager.DeleteUser called")
 
-	err := um.Session.DB(utils.DbName).C(utils.UserCollection).RemoveId(objId); if err != nil {
+	err := um.Store.Delete(objId); if err != nil {
 		if err.Error() == "not found" {
 			errBody := utils.HttpError{
 				ErrorCode:		http.StatusText(http.StatusNotFound),
