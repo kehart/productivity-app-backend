@@ -37,7 +37,7 @@ func main() {
 	initValidator()
 
 	s := getSession()
-	userManager := 	managers.UserManager{Session: s, Store: utils.MongoDb{s}}
+	userManager := 	managers.UserManager{Store: utils.MongoDb{s}}
 	uh := handlers.UserHandler{ UserManager: &userManager }
 	goalHandler := managers.GoalManager{Session: s }
 	gh := handlers.GoalHandler{GoalManager:goalHandler}

@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"github.com/productivity-app-backend/src/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"gopkg.in/mgo.v2"
 	"net/http"
 )
 
 type UserManager struct {
-	Session *mgo.Session
+	//Session *mgo.Session
 	Store utils.Store
 }
 
