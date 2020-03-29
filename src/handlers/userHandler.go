@@ -65,8 +65,8 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getAllUsers called")
 
-	var results []utils.User
-	_, err := uh.UserManager.GetUsers(&results); if err != nil {
+	var results *[]utils.User
+	results, err := uh.UserManager.GetUsers(); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return
@@ -94,18 +94,19 @@ func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Description
+// Update user given userId and JSON object with fields to change
 func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: updateUser called")
 
-	userID := mux.Vars(r)["id"]
-	objId, errLong := utils.FormatObjectId(userID); if errLong != nil {
+	// Extract and format id from URL
+	userId := mux.Vars(r)["id"]
+	objId, errLong := utils.FormatObjectId(userId); if errLong != nil {
 		w.WriteHeader(errLong.StatusCode)
 		json.NewEncoder(w).Encode(errLong.Error)
 		return
 	}
-	var updatedUser, existingUser utils.User
 
+	var updatesToApply utils.User
 	reqBody, err := ioutil.ReadAll(r.Body); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
@@ -115,8 +116,10 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(errBody)
 		return
 	}
-	json.Unmarshal(reqBody, &updatedUser)
-	_, genErr := valid.ValidateStruct(&updatedUser) ; if genErr != nil {
+	json.Unmarshal(reqBody, &updatesToApply)
+
+	// Validate fields in JSON object
+	_, genErr := valid.ValidateStruct(&updatesToApply) ; if genErr != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
 			ErrorMessage:	genErr,
@@ -125,15 +128,14 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(errBody)
 		return
 	}
-	updatedUser.ID = objId
 
-	_, errLong = uh.UserManager.UpdateUser(&existingUser, &updatedUser); if errLong != nil {
+	updatedUser, errLong := uh.UserManager.UpdateUser(objId, &updatesToApply); if errLong != nil {
 		w.WriteHeader(errLong.StatusCode)
 		json.NewEncoder(w).Encode(errLong.Error)
 		return
 	}
 
-	json.NewEncoder(w).Encode(existingUser)
+	json.NewEncoder(w).Encode(updatedUser)
 	w.WriteHeader(http.StatusOK)
 }
 

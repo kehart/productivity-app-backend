@@ -32,10 +32,11 @@ func (um UserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
 	return nil
 }
 
-func (um UserManager) GetUsers(results *[]utils.User) (*[]utils.User, *utils.HTTPErrorLong) {
+func (um UserManager) GetUsers(/*results *[]utils.User*/) (*[]utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: Manager.GetUsers called")
 
-	err := um.Store.FindAll(results); if err != nil {
+	var results *[]utils.User
+	results, err := um.Store.FindAll(); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",
@@ -52,11 +53,11 @@ func (um UserManager) GetUsers(results *[]utils.User) (*[]utils.User, *utils.HTT
 func (um UserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: Manager.GetSingleUser called")
 
-	var user utils.User
-	err := um.Store.FindById(objId, &user); if err != nil {
+	//var user utils.User
+	user, err := um.Store.FindById(objId); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	"User with id `objId` not found", // TODO figure out string interpolation
+			ErrorMessage: 	fmt.Sprintf("User with id %s not found", objId.String()),
 		}
 		fullErr := utils.HTTPErrorLong {
 			Error:      errBody,
@@ -64,36 +65,36 @@ func (um UserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *uti
 		}
 		return nil, &fullErr
 	}
-	return &user, nil
+	return user, nil
 }
 
 // updatedUser contains all the information for the update, including the ID of the user
-func (um UserManager) UpdateUser(existingUser *utils.User, updatedUser *utils.User) (*utils.User, *utils.HTTPErrorLong) {
+func (um UserManager) UpdateUser(userId primitive.ObjectID, updatesToApply *utils.User) (*utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: Manager.UpdateUser called")
 
 	// Read the current state of the user from the DB and place data into existingUser
-	err := um.Store.FindById(updatedUser.ID, existingUser); if err != nil {
+	var existingUser *utils.User
+	existingUser, err := um.Store.FindById(userId); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	"User with id `updatedUser.ID` not found", // TODO figure out string interpolation
+			ErrorMessage: 	fmt.Sprintf("User with id %s not found", userId.String()),
 		}
 		fullErr := utils.HTTPErrorLong{
 			Error:      errBody,
 			StatusCode: http.StatusNotFound,
 		}
-		return nil, & fullErr
+		return nil, &fullErr
 	}
 
-	// Make changes to existing user based on updateUser data
-	if len(updatedUser.FirstName) > 0 {
-		existingUser.FirstName = updatedUser.FirstName
+	// Make changes to existing user based on updatesToApply data
+	if len(updatesToApply.FirstName) > 0 {
+		existingUser.FirstName = updatesToApply.FirstName
 	}
-	if len(updatedUser.LastName) > 0 {
-		existingUser.LastName = updatedUser.LastName
+	if len(updatesToApply.LastName) > 0 {
+		existingUser.LastName = updatesToApply.LastName
 	}
-	existingUser.ID = updatedUser.ID
 
-	err = um.Store.Update(existingUser.ID, existingUser); if err != nil {
+	existingUser, err = um.Store.Update(userId, existingUser); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:    http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: "Server error",

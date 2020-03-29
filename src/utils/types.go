@@ -62,9 +62,9 @@ type (
 	Store interface {
 		Create(user *User) error
 		Delete(Id primitive.ObjectID) error
-		FindById(id primitive.ObjectID, user *User) error
-		FindAll(users *[]User) error
-		Update(id primitive.ObjectID, user *User) error
+		FindById(id primitive.ObjectID) (*User, error) // done
+		FindAll() (*[]User, error) // done
+		Update(id primitive.ObjectID, user *User) (*User, error) // done
 	}
 
 	// The app 'context'; not sure if i need this

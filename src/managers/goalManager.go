@@ -52,7 +52,7 @@ func (gm GoalManager) GetSingleGoal(objId primitive.ObjectID) (*utils.Goal, *uti
 	err := gm.Session.DB(utils.DbName).C(utils.GoalCollection).FindId(objId).One(&goal); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	"Goal with id ID not found", // TODO figure out string interpolation
+			ErrorMessage: 	fmt.Sprintf("Goal with id %s not found", objId.String()),
 		}
 		fullErr := utils.HTTPErrorLong{
 			Error:      errBody,

@@ -72,7 +72,7 @@ func (em EventManager) GetSingleEvent(objId primitive.ObjectID) (*utils.SleepEve
 	err := em.Session.DB(utils.DbName).C(utils.EventCollection).FindId(objId).One(&event); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	"Event with id ID not found", // TODO figure out string interpolation
+			ErrorMessage: 	fmt.Sprintf("Event with id %s not found", objId.String()),
 		}
 		fullErr := utils.HTTPErrorLong{
 			Error:      errBody,

@@ -23,16 +23,21 @@ func (mdb MongoDb) Create(user *User) error {
 	return  mdb.Session.DB(DbName).C(UserCollection).Insert(user)
 }
 
-func (mdb MongoDb) FindById(id primitive.ObjectID, user *User) error {
-	return mdb.Session.DB(DbName).C(UserCollection).FindId(id).One(user)
+func (mdb MongoDb) FindById(id primitive.ObjectID) (*User, error) {
+	var user User
+	err := mdb.Session.DB(DbName).C(UserCollection).FindId(id).One(&user)
+	return &user, err
 }
 
-func (mdb MongoDb) FindAll(users *[]User) error {
-	return mdb.Session.DB(DbName).C(UserCollection).Find(nil).All(users)
+func (mdb MongoDb) FindAll() (*[]User, error) {
+	var users []User
+	err := mdb.Session.DB(DbName).C(UserCollection).Find(nil).All(&users)
+	return &users, err
 }
 
-func (mdb MongoDb) Update(id primitive.ObjectID, user *User) error {
-	return mdb.Session.DB(DbName).C(UserCollection).UpdateId(id, user)
+func (mdb MongoDb) Update(id primitive.ObjectID, user *User) (*User, error) {
+	err := mdb.Session.DB(DbName).C(UserCollection).UpdateId(id, user)
+	return user, err
 }
 
 func (mdb MongoDb) Delete(id primitive.ObjectID) error {
