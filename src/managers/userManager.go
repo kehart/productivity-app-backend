@@ -32,7 +32,7 @@ func (um UserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
 	return nil
 }
 
-func (um UserManager) GetUsers(/*results *[]utils.User*/) (*[]utils.User, *utils.HTTPErrorLong) {
+func (um UserManager) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: Manager.GetUsers called")
 
 	var results *[]utils.User
@@ -53,7 +53,6 @@ func (um UserManager) GetUsers(/*results *[]utils.User*/) (*[]utils.User, *utils
 func (um UserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: Manager.GetSingleUser called")
 
-	//var user utils.User
 	user, err := um.Store.FindById(objId); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
