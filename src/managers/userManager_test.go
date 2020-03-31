@@ -2,7 +2,6 @@ package	managers
 
 import (
 	"errors"
-	"fmt"
 	"github.com/productivity-app-backend/src/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -14,10 +13,16 @@ import (
 // internal server error
 // in happy case, assert all the values are the same and id is new
 
-type userTest struct {
+type createUserTest struct {
 	user 		*utils.User
 	error 		*utils.HTTPErrorLong
 	shouldFail 	bool
+}
+
+type getUserTest struct {
+	numUsers	int
+	shouldFail	bool
+	error 		*utils.HTTPErrorLong
 }
 
 func TestInsertUser(t *testing.T) {
@@ -33,7 +38,7 @@ func TestInsertUser(t *testing.T) {
 		Error:      utils.HttpError{},
 		StatusCode: http.StatusInternalServerError,
 	}
-	testCases := []userTest{
+	testCases := []createUserTest{
 		{
 			user: 		&u,
 			error: 		nil,
@@ -70,9 +75,51 @@ func TestInsertUser(t *testing.T) {
 
 // empty,
 // list and check len
+// internal server error
 
 func TestGetEvents(t *testing.T) {
+	assert := assert.New(t)
 
+	e := utils.HTTPErrorLong{
+		Error:      utils.HttpError{},
+		StatusCode: http.StatusInternalServerError,
+	}
+	testCases := []getUserTest{
+		{
+			numUsers: 0,
+			shouldFail: true,
+			error: &e,
+		},
+		{
+			numUsers: 0,
+			shouldFail: false,
+			error: nil,
+		},
+		{
+			numUsers: 5,
+			shouldFail: false,
+			error: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		db := new(fakeStore)
+		manager := UserManager{Store:db}
+		db.On("FindAll").Return(tc.shouldFail, tc.numUsers)
+
+		var users *[]utils.User
+		var err *utils.HTTPErrorLong
+		users, err = manager.GetUsers() // calls FindAll
+
+		assert.Equal(tc.shouldFail, err != nil, "If the test case shouldFail, then the error must be nil") // todo change to expected/got with sprintf
+		if tc.shouldFail {
+			assert.Equal(tc.error.StatusCode, err.StatusCode) // only expecting internal server error
+		} else {
+			assert.NotNil(users, "Users should not be nil")
+			assert.Equal(len(*users), tc.numUsers, "Users should have the specified length")
+		}
+
+	}
 }
 
 func TestGetSingleEvent(t *testing.T) {
@@ -150,12 +197,10 @@ func (_m *fakeStore) Create(user *utils.User) error {
 
 	var err error
 	err, ok := ret.Get(0).(error); if ok {
-		fmt.Println("error not nil")
 		return err
 	} else if err != nil {
 		panic("invalid type passed in")
 	} else {
-		fmt.Println("error nil")
 		return err // nil
 	}
 }
@@ -177,13 +222,18 @@ func (_m *fakeStore) FindById(id primitive.ObjectID) (*utils.User, error) {
 	return nil, nil
 }
 
+// takes input of form (shouldErr, numUsers) and returns either
+// an error or a slice of numUsers users
 func (_m *fakeStore) FindAll() (*[]utils.User, error) {
 	ret := _m.Called()
 
-
-	// return error, nil or users
-
-	return nil, nil
+	shouldErr := ret.Bool(0); if shouldErr {
+		return nil, errors.New("error")
+	} else {
+		numUsers := ret.Int(1)
+		users := make([]utils.User, numUsers)
+		return &users, nil
+	}
 }
 
 
