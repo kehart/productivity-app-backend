@@ -134,11 +134,11 @@ func TestUserManager_GetSingleUser(t *testing.T) {
 	for _, tc := range testCases {
 		db := new(fakeStore)
 		manager := UserManager{Store:db}
-		db.On("FindById").Return(tc.shouldFail)
 
 		var user *utils.User
 		var err *utils.HTTPErrorLong
 		testId := primitive.ObjectID{}
+		db.On("FindById", testId).Return(tc.shouldFail)
 		user, err = manager.GetSingleUser(testId) // calls FindById
 
 		assert.Equal(tc.shouldFail, err != nil, "If the test case shouldFail, then the error must be nil") // todo change to expected/got with sprintf
@@ -148,17 +148,9 @@ func TestUserManager_GetSingleUser(t *testing.T) {
 			assert.NotNil(user, "Users should not be nil")
 			assert.Equal(user.ID, testId)
 		}
-
 	}
 }
 
-// not found, internal server error, and normal
-/*
-type createUpdateUserTest struct {
-	user 		*utils.User
-	error 		*utils.HTTPErrorLong
-	shouldFail 	bool
-}*/
 func TestUserManager_UpdateUser(t *testing.T) {
 	assert := assert.New(t)
 
@@ -198,8 +190,8 @@ func TestUserManager_UpdateUser(t *testing.T) {
 		db := new(fakeStore)
 		manager := UserManager{Store:db}
 
-		db.On("FindById").Return(tc.shouldFail && tc.error.StatusCode == http.StatusNotFound)
-		db.On("Update").Return(tc.shouldFail && tc.error.StatusCode == http.StatusInternalServerError)
+		db.On("FindById", tc.user.ID).Return(tc.shouldFail && tc.error.StatusCode == http.StatusNotFound)
+		db.On("Update", tc.user.ID).Return(tc.shouldFail && tc.error.StatusCode == http.StatusInternalServerError)
 
 		var err *utils.HTTPErrorLong
 		updatedUser, err := manager.UpdateUser(tc.user.ID, tc.user)
@@ -212,12 +204,62 @@ func TestUserManager_UpdateUser(t *testing.T) {
 			assert.True(tc.user.FirstName == "" || tc.user.FirstName == updatedUser.FirstName)
 			assert.True(tc.user.LastName == "" || tc.user.LastName == updatedUser.LastName)
 		}
-
 	}
 }
 
+// not found, 500, ok
 func TestUserManager_DeleteUser(t *testing.T) {
+	assert := assert.New(t)
 
+	e404 := utils.HTTPErrorLong{
+		Error:      utils.HttpError{},
+		StatusCode: http.StatusNotFound,
+	}
+	e500 := utils.HTTPErrorLong{
+		Error:      utils.HttpError{},
+		StatusCode: http.StatusInternalServerError,
+	}
+	testCases := []getUserTest{
+		{
+			numUsers: 0,
+			shouldFail: true,
+			error: &e404,
+		},
+		{
+			numUsers: 1,
+			shouldFail: false,
+			error: nil,
+		},
+		{
+			numUsers: 0,
+			shouldFail: true,
+			error: &e500,
+		},
+	}
+
+	for _, tc := range testCases {
+		db := new(fakeStore)
+		manager := UserManager{Store:db}
+
+		//var user *utils.User
+		var err *utils.HTTPErrorLong
+		testId := primitive.ObjectID{}
+		if tc.shouldFail && tc.error.StatusCode == http.StatusNotFound {
+			db.On("Delete", testId).Return(tc.shouldFail, "not found")
+		} else  if tc.shouldFail {
+			db.On("Delete", testId).Return(tc.shouldFail, "internal server error")
+		} else {
+			db.On("Delete", testId).Return(tc.shouldFail, "")
+		}
+
+		err = manager.DeleteUser(testId) // calls Delete
+
+		assert.Equal(tc.shouldFail, err != nil, "If the test case shouldFail, then the error must be nil") // todo change to expected/got with sprintf
+		if tc.shouldFail {
+			assert.Equal(tc.error.StatusCode, err.StatusCode) // only expecting internal server error
+		}
+
+	}
 }
 
 /*
@@ -240,7 +282,7 @@ func (_m *fakeStore) Create(user *utils.User) error {
 
 // takes in a boolean shouldFail
 func (_m *fakeStore) FindById(id primitive.ObjectID) (*utils.User, error) {
-	ret := _m.Called()
+	ret := _m.Called(id)
 
 	shouldErr := ret.Bool(0); if shouldErr {
 		return nil, errors.New("error")
@@ -272,7 +314,7 @@ func (_m *fakeStore) FindAll() (*[]utils.User, error) {
 // take in shouldFail
 // user param should already have the change set applied to it
 func (_m *fakeStore) Update(id primitive.ObjectID, user *utils.User) (*utils.User, error) {
-	ret := _m.Called()
+	ret := _m.Called(id)
 
 	shouldErr := ret.Bool(0); if shouldErr {
 		return nil, errors.New("error")
@@ -280,25 +322,21 @@ func (_m *fakeStore) Update(id primitive.ObjectID, user *utils.User) (*utils.Use
 	return user, nil
 }
 
-func (_m *fakeStore) Delete(Id primitive.ObjectID) error {
-	//	ret := _m.Called(ID)
-	//
-	//	var r0 error
-	//	if rf, ok := ret.Get(0).(func(int) error); ok {
-	//		r0 = rf(ID)
-	//	} else {
-	//		r0 = ret.Error(0)
-	//	}
-	//
-	//	return r0
+// (shouldFail, errorText) where error text isi "not found" or "internal server error"
+func (_m *fakeStore) Delete(id primitive.ObjectID) error {
+	ret := _m.Called(id)
+
+	shouldFail := ret.Bool(0); if shouldFail {
+		errorMsg := ret.String(1)
+		retErr := errors.New(errorMsg)
+		return retErr
+	}
 	return nil
 }
 
 // TODO
 /*
-- change signatures in this module to match interface
 - complete the mock functions
-- write the test functions
  FOR THE HANDLERS
 - create an interface for the manager
 - create concrete implementation for the manager

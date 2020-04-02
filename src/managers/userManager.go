@@ -128,7 +128,7 @@ func (um UserManager) DeleteUser(objId primitive.ObjectID) *utils.HTTPErrorLong 
 		}
 		fullErr := utils.HTTPErrorLong{
 			Error:      errBody,
-			StatusCode: http.StatusNotFound,
+			StatusCode: http.StatusInternalServerError,
 		}
 		return &fullErr
 	}
