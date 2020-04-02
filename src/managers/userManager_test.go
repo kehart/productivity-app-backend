@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-type createUserTest struct {
+type createUpdateUserTest struct {
 	user 		*utils.User
 	error 		*utils.HTTPErrorLong
 	shouldFail 	bool
@@ -35,7 +35,7 @@ func TestInsertUser(t *testing.T) {
 		Error:      utils.HttpError{},
 		StatusCode: http.StatusInternalServerError,
 	}
-	testCases := []createUserTest{
+	testCases := []createUpdateUserTest{
 		{
 			user: 		&u,
 			error: 		nil,
@@ -51,11 +51,7 @@ func TestInsertUser(t *testing.T) {
 	for _, tc := range testCases {
 		db := new(fakeStore)
 		manager := UserManager{Store:db}
-		if tc.shouldFail {
-			db.On("Create", &u).Return(errors.New("error"))
-		} else {
-			db.On("Create", &u).Return(nil)
-		}
+		db.On("Create", &u).Return(tc.shouldFail)
 
 		var err *utils.HTTPErrorLong
 		err = manager.CreateUser(&u) // calls create
@@ -142,18 +138,87 @@ func TestUserManager_GetSingleUser(t *testing.T) {
 
 		var user *utils.User
 		var err *utils.HTTPErrorLong
-		user, err = manager.GetSingleUser(primitive.ObjectID{}) // calls FindById
+		testId := primitive.ObjectID{}
+		user, err = manager.GetSingleUser(testId) // calls FindById
 
 		assert.Equal(tc.shouldFail, err != nil, "If the test case shouldFail, then the error must be nil") // todo change to expected/got with sprintf
 		if tc.shouldFail {
 			assert.Equal(tc.error.StatusCode, err.StatusCode) // only expecting internal server error
 		} else {
 			assert.NotNil(user, "Users should not be nil")
+			assert.Equal(user.ID, testId)
 		}
 
 	}
 }
 
+// not found, internal server error, and normal
+/*
+type createUpdateUserTest struct {
+	user 		*utils.User
+	error 		*utils.HTTPErrorLong
+	shouldFail 	bool
+}*/
+func TestUserManager_UpdateUser(t *testing.T) {
+	assert := assert.New(t)
+
+	id := primitive.ObjectID{}
+	updateData := utils.User{
+		FirstName: "Jackie",
+		LastName:  "",
+		ID:        id,
+	}
+	e500 := utils.HTTPErrorLong{
+		Error:      utils.HttpError{},
+		StatusCode: http.StatusInternalServerError,
+	}
+	e404 := utils.HTTPErrorLong{
+		Error:      utils.HttpError{},
+		StatusCode: http.StatusNotFound,
+	}
+	testCases := []createUpdateUserTest{
+		{
+			user: 		&updateData,
+			error: 		nil,
+			shouldFail: false,
+		},
+		{
+			user: 		&updateData,
+			error: 		&e500,
+			shouldFail: true,
+		},
+		{
+			user: 		&updateData,
+			error: 		&e404,
+			shouldFail: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		db := new(fakeStore)
+		manager := UserManager{Store:db}
+
+		db.On("FindById").Return(tc.shouldFail && tc.error.StatusCode == http.StatusNotFound)
+		db.On("Update").Return(tc.shouldFail && tc.error.StatusCode == http.StatusInternalServerError)
+
+		var err *utils.HTTPErrorLong
+		updatedUser, err := manager.UpdateUser(tc.user.ID, tc.user)
+
+		assert.Equal(tc.shouldFail, err != nil, "If the test case shouldFail, then the error must be nil") // todo change to expected/got with sprintf
+		if tc.shouldFail {
+			assert.Equal(tc.error.StatusCode, err.StatusCode) // only expecting internal server error
+		} else {
+			assert.Equal(tc.user.ID, id) // make sure the id was randomized
+			assert.True(tc.user.FirstName == "" || tc.user.FirstName == updatedUser.FirstName)
+			assert.True(tc.user.LastName == "" || tc.user.LastName == updatedUser.LastName)
+		}
+
+	}
+}
+
+func TestUserManager_DeleteUser(t *testing.T) {
+
+}
 
 /*
 Mock Db and method implementations
@@ -167,26 +232,9 @@ type fakeStore struct {
 func (_m *fakeStore) Create(user *utils.User) error {
 	ret := _m.Called(user)
 
-	var err error
-	err, ok := ret.Get(0).(error); if ok { // casts value to type error
-		return err
-	} else if err != nil {
-		panic("invalid type passed in")
-	} else {
-		return err // nil
+	shouldErr := ret.Bool(0); if shouldErr {
+		return errors.New("error")
 	}
-}
-func (_m *fakeStore) Delete(Id primitive.ObjectID) error {
-	//	ret := _m.Called(ID)
-	//
-	//	var r0 error
-	//	if rf, ok := ret.Get(0).(func(int) error); ok {
-	//		r0 = rf(ID)
-	//	} else {
-	//		r0 = ret.Error(0)
-	//	}
-	//
-	//	return r0
 	return nil
 }
 
@@ -200,7 +248,7 @@ func (_m *fakeStore) FindById(id primitive.ObjectID) (*utils.User, error) {
 		user := utils.User{
 			FirstName: "Bruce",
 			LastName:  "Lee",
-			ID:        primitive.ObjectID{},
+			ID:        id,
 		}
 		return &user, nil
 	}
@@ -220,9 +268,30 @@ func (_m *fakeStore) FindAll() (*[]utils.User, error) {
 	}
 }
 
-
+// return error or user with updates applied
+// take in shouldFail
+// user param should already have the change set applied to it
 func (_m *fakeStore) Update(id primitive.ObjectID, user *utils.User) (*utils.User, error) {
-	return nil, nil
+	ret := _m.Called()
+
+	shouldErr := ret.Bool(0); if shouldErr {
+		return nil, errors.New("error")
+	}
+	return user, nil
+}
+
+func (_m *fakeStore) Delete(Id primitive.ObjectID) error {
+	//	ret := _m.Called(ID)
+	//
+	//	var r0 error
+	//	if rf, ok := ret.Get(0).(func(int) error); ok {
+	//		r0 = rf(ID)
+	//	} else {
+	//		r0 = ret.Error(0)
+	//	}
+	//
+	//	return r0
+	return nil
 }
 
 // TODO
