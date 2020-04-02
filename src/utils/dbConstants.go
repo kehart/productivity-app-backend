@@ -20,7 +20,7 @@ type MongoDb struct {
 // Implement the Store interface
 
 func (mdb MongoDb) Create(user *User) error {
-	return  mdb.Session.DB(DbName).C(UserCollection).Insert(user)
+	return mdb.Session.DB(DbName).C(UserCollection).Insert(user)
 }
 
 func (mdb MongoDb) FindById(id primitive.ObjectID) (*User, error) {
