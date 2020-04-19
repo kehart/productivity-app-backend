@@ -69,7 +69,7 @@ type (
 	}
 
 	// User Manager Abstraction
-	UserManager interface {
+	IUserManager interface {
 		CreateUser(newUser *User) *HTTPErrorLong
 		GetUsers() (*[]User, *HTTPErrorLong)
 		GetSingleUser(objId primitive.ObjectID) (*User, *HTTPErrorLong)

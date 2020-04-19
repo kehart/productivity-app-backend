@@ -50,7 +50,7 @@ func TestInsertUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		db := new(fakeStore)
-		manager := UserManager{Store:db}
+		manager := UserManagerImpl{Store:db}
 		db.On("Create", &u).Return(tc.shouldFail)
 
 		var err *utils.HTTPErrorLong
@@ -94,7 +94,7 @@ func TestGetEvents(t *testing.T) {
 
 	for _, tc := range testCases {
 		db := new(fakeStore)
-		manager := UserManager{Store:db}
+		manager := UserManagerImpl{Store:db}
 		db.On("FindAll").Return(tc.shouldFail, tc.numUsers)
 
 		var users *[]utils.User
@@ -133,7 +133,7 @@ func TestUserManager_GetSingleUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		db := new(fakeStore)
-		manager := UserManager{Store:db}
+		manager := UserManagerImpl{Store:db}
 
 		var user *utils.User
 		var err *utils.HTTPErrorLong
@@ -188,7 +188,7 @@ func TestUserManager_UpdateUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		db := new(fakeStore)
-		manager := UserManager{Store:db}
+		manager := UserManagerImpl{Store:db}
 
 		db.On("FindById", tc.user.ID).Return(tc.shouldFail && tc.error.StatusCode == http.StatusNotFound)
 		db.On("Update", tc.user.ID).Return(tc.shouldFail && tc.error.StatusCode == http.StatusInternalServerError)
@@ -239,7 +239,7 @@ func TestUserManager_DeleteUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		db := new(fakeStore)
-		manager := UserManager{Store:db}
+		manager := UserManagerImpl{Store:db}
 
 		//var user *utils.User
 		var err *utils.HTTPErrorLong
@@ -271,8 +271,8 @@ type fakeStore struct {
 }
 
 // either create returns nil as the error, or it returns a new error
-func (_m *fakeStore) Create(user *utils.User) error {
-	ret := _m.Called(user)
+func (_m *fakeStore) Create(obj interface{}, collectionName string) error {
+	ret := _m.Called(obj)
 
 	shouldErr := ret.Bool(0); if shouldErr {
 		return errors.New("error")
@@ -281,7 +281,7 @@ func (_m *fakeStore) Create(user *utils.User) error {
 }
 
 // takes in a boolean shouldFail
-func (_m *fakeStore) FindById(id primitive.ObjectID) (*utils.User, error) {
+func (_m *fakeStore) FindById(id primitive.ObjectID, collectionName string) (interface{}, error) {
 	ret := _m.Called(id)
 
 	shouldErr := ret.Bool(0); if shouldErr {
@@ -298,7 +298,7 @@ func (_m *fakeStore) FindById(id primitive.ObjectID) (*utils.User, error) {
 
 // takes input of form (shouldErr, numUsers) and returns either
 // an error or a slice of numUsers users
-func (_m *fakeStore) FindAll() (*[]utils.User, error) {
+func (_m *fakeStore) FindAll(collectionName string) (interface{}, error)  {
 	ret := _m.Called()
 
 	shouldErr := ret.Bool(0); if shouldErr {
@@ -313,17 +313,17 @@ func (_m *fakeStore) FindAll() (*[]utils.User, error) {
 // return error or user with updates applied
 // take in shouldFail
 // user param should already have the change set applied to it
-func (_m *fakeStore) Update(id primitive.ObjectID, user *utils.User) (*utils.User, error) {
+func (_m *fakeStore) Update(id primitive.ObjectID, obj interface{}, collectionName string) (interface{}, error) {
 	ret := _m.Called(id)
 
 	shouldErr := ret.Bool(0); if shouldErr {
 		return nil, errors.New("error")
 	}
-	return user, nil
+	return obj, nil
 }
 
 // (shouldFail, errorText) where error text isi "not found" or "internal server error"
-func (_m *fakeStore) Delete(id primitive.ObjectID) error {
+func (_m *fakeStore)  Delete(id primitive.ObjectID, collectionName string) error{
 	ret := _m.Called(id)
 
 	shouldFail := ret.Bool(0); if shouldFail {

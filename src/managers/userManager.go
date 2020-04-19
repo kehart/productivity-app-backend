@@ -7,11 +7,12 @@ import (
 	"net/http"
 )
 
-type UserManager struct {
+// Concrete implementation of UserManager interface
+type UserManagerImpl struct {
 	Store utils.Store
 }
 
-func (um UserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
+func (um UserManagerImpl) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
 	fmt.Println("LOG: UserManager.CreateUser called")
 
 	// Assign new ID to new user
@@ -31,7 +32,7 @@ func (um UserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
 	return nil
 }
 
-func (um UserManager) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
+func (um UserManagerImpl ) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: UserManager.GetUsers called")
 
 //	var results *[]utils.User
@@ -49,7 +50,7 @@ func (um UserManager) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
 	return results.(*[]utils.User), nil
 }
 
-func (um UserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
+func (um UserManagerImpl ) GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: UserManager.GetSingleUser called")
 
 	user, err := um.Store.FindById(objId, utils.UserCollection); if err != nil {
@@ -67,7 +68,7 @@ func (um UserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *uti
 }
 
 // updatedUser contains all the information for the update, including the ID of the user
-func (um UserManager) UpdateUser(userId primitive.ObjectID, updatesToApply *utils.User) (*utils.User, *utils.HTTPErrorLong) {
+func (um UserManagerImpl ) UpdateUser(userId primitive.ObjectID, updatesToApply *utils.User) (*utils.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: UserManager.UpdateUser called")
 
 	// Read the current state of the user from the DB and place data into existingUser
@@ -107,7 +108,7 @@ func (um UserManager) UpdateUser(userId primitive.ObjectID, updatesToApply *util
 	return updatedUser.(*utils.User), nil
 }
 
-func (um UserManager) DeleteUser(objId primitive.ObjectID) *utils.HTTPErrorLong {
+func (um UserManagerImpl) DeleteUser(objId primitive.ObjectID) *utils.HTTPErrorLong {
 	fmt.Println("LOG: UserManager.DeleteUser called")
 
 	err := um.Store.Delete(objId, utils.UserCollection); if err != nil {
