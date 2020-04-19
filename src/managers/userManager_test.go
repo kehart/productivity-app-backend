@@ -336,7 +336,6 @@ func (_m *fakeStore) Delete(id primitive.ObjectID) error {
 
 // TODO
 /*
-- complete the mock functions
  FOR THE HANDLERS
 - create an interface for the manager
 - create concrete implementation for the manager

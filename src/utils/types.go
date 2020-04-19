@@ -58,19 +58,26 @@ type SleepEvent struct {
 
 
 type (
+
 	// db abstraction [users so far]
 	Store interface {
-		Create(user *User) error
-		Delete(Id primitive.ObjectID) error
-		FindById(id primitive.ObjectID) (*User, error)
-		FindAll() (*[]User, error)
-		Update(id primitive.ObjectID, user *User) (*User, error)
+		Create(obj interface{}, collectionName string) error
+		Delete(id primitive.ObjectID, collectionName string) error
+		FindById(id primitive.ObjectID, collectionName string) (interface{}, error)
+		FindAll(collectionName string) (interface{}, error)
+		Update(id primitive.ObjectID, obj interface{}, collectionName string) (interface{}, error)
 	}
 
-	// The app 'context'; not sure if i need this
-	//app struct {
-	//	MongoDb store
-	//}
+	// User Manager Abstraction
+	UserManager interface {
+		CreateUser(newUser *User) *HTTPErrorLong
+		GetUsers() (*[]User, *HTTPErrorLong)
+		GetSingleUser(objId primitive.ObjectID) (*User, *HTTPErrorLong)
+		UpdateUser(userId primitive.ObjectID, updatesToApply *User) (*User, *HTTPErrorLong)
+		DeleteUser(objId primitive.ObjectID) *HTTPErrorLong
+	}
 
-	// Other types which are the models
+	// GoalManager Abstraction
+
+
 )

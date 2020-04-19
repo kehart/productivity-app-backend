@@ -10,7 +10,8 @@ import (
 )
 
 type GoalManager struct {
-	Session *mgo.Session
+	Store utils.Store
+	//Session *mgo.Session
 }
 
 func (gm GoalManager) CreateGoal(newGoal *utils.Goal) (*utils.Goal, *utils.HTTPErrorLong) {

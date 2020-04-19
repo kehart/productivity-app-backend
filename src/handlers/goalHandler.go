@@ -54,6 +54,8 @@ type GoalHandler struct {
 		json.NewEncoder(w).Encode(err.Error)
 		return
 	}*/
+
+// Handles POST /goals
 func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createGoal called")
 

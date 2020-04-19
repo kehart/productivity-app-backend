@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// Used to validate and format ObjectIds for use in a Mongo DB
 func FormatObjectId(userID string) (primitive.ObjectID, *HTTPErrorLong) {
 	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
 		errBody := HttpError{

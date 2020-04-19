@@ -8,17 +8,16 @@ import (
 )
 
 type UserManager struct {
-	//Session *mgo.Session
 	Store utils.Store
 }
 
 func (um UserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
-	fmt.Println("LOG: Manager.CreateUser called")
+	fmt.Println("LOG: UserManager.CreateUser called")
 
 	// Assign new ID to new user
 	newUser.ID = primitive.NewObjectID()
 	// Insert user into DB
-	err := um.Store.Create(newUser); if err != nil {
+	err := um.Store.Create(newUser, utils.UserCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",
@@ -33,10 +32,10 @@ func (um UserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
 }
 
 func (um UserManager) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
-	fmt.Println("LOG: Manager.GetUsers called")
+	fmt.Println("LOG: UserManager.GetUsers called")
 
-	var results *[]utils.User
-	results, err := um.Store.FindAll(); if err != nil {
+//	var results *[]utils.User
+	results, err := um.Store.FindAll(utils.UserCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",
@@ -47,13 +46,13 @@ func (um UserManager) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
 		}
 		return nil, &fullErr
 	}
-	return results, nil
+	return results.(*[]utils.User), nil
 }
 
 func (um UserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
-	fmt.Println("LOG: Manager.GetSingleUser called")
+	fmt.Println("LOG: UserManager.GetSingleUser called")
 
-	user, err := um.Store.FindById(objId); if err != nil {
+	user, err := um.Store.FindById(objId, utils.UserCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	fmt.Sprintf("User with id %s not found", objId.String()),
@@ -64,16 +63,15 @@ func (um UserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *uti
 		}
 		return nil, &fullErr
 	}
-	return user, nil
+	return user.(*utils.User), nil
 }
 
 // updatedUser contains all the information for the update, including the ID of the user
 func (um UserManager) UpdateUser(userId primitive.ObjectID, updatesToApply *utils.User) (*utils.User, *utils.HTTPErrorLong) {
-	fmt.Println("LOG: Manager.UpdateUser called")
+	fmt.Println("LOG: UserManager.UpdateUser called")
 
 	// Read the current state of the user from the DB and place data into existingUser
-	var existingUser *utils.User
-	existingUser, err := um.Store.FindById(userId); if err != nil {
+	obj, err := um.Store.FindById(userId, utils.UserCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	fmt.Sprintf("User with id %s not found", userId.String()),
@@ -85,6 +83,8 @@ func (um UserManager) UpdateUser(userId primitive.ObjectID, updatesToApply *util
 		return nil, &fullErr
 	}
 
+	existingUser := obj.(*utils.User)
+
 	// Make changes to existing user based on updatesToApply data
 	if len(updatesToApply.FirstName) > 0 {
 		existingUser.FirstName = updatesToApply.FirstName
@@ -93,7 +93,7 @@ func (um UserManager) UpdateUser(userId primitive.ObjectID, updatesToApply *util
 		existingUser.LastName = updatesToApply.LastName
 	}
 
-	existingUser, err = um.Store.Update(userId, existingUser); if err != nil {
+	updatedUser, err := um.Store.Update(userId, existingUser, utils.UserCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:    http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: "Server error",
@@ -104,13 +104,13 @@ func (um UserManager) UpdateUser(userId primitive.ObjectID, updatesToApply *util
 		}
 		return nil, &fullErr
 	}
-	return existingUser, nil
+	return updatedUser.(*utils.User), nil
 }
 
 func (um UserManager) DeleteUser(objId primitive.ObjectID) *utils.HTTPErrorLong {
-	fmt.Println("LOG: Manager.DeleteUser called")
+	fmt.Println("LOG: UserManager.DeleteUser called")
 
-	err := um.Store.Delete(objId); if err != nil {
+	err := um.Store.Delete(objId, utils.UserCollection); if err != nil {
 		if err.Error() == "not found" {
 			errBody := utils.HttpError{
 				ErrorCode:		http.StatusText(http.StatusNotFound),

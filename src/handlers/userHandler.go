@@ -5,18 +5,25 @@ import (
 	"fmt"
 	valid "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
-	"github.com/productivity-app-backend/src/managers"
 	"github.com/productivity-app-backend/src/utils"
 	"io/ioutil"
 	"net/http"
 )
 
+/*
+A module for handling HTTP requests to the User API. Supports:
+- Create
+- Read Single and Read All
+- Update
+- Delete
+ */
+
 type UserHandler struct {
-	UserManager *managers.UserManager
+	UserManager utils.UserManager
 }
 
-
-// Description
+// Handles request for POST /users
+// Takes in JSON user object
 func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createUser called")
 	var newUser utils.User
@@ -24,7 +31,7 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	"Bad request",
+			ErrorMessage:	"Bad request", // TODO
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errBody)
@@ -61,7 +68,8 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// Description
+// Handles request for GET /users
+// Currently, no querying supported
 func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getAllUsers called")
 
@@ -75,11 +83,12 @@ func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Description
+// Handles request for GET /users/{id}
 func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getSingleUser called")
 	userID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(userID); if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return
@@ -94,7 +103,8 @@ func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Update user given userId and JSON object with fields to change
+// Handles request for PATCH /users/{id}
+// Takes in JSON user patch object
 func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: updateUser called")
 
@@ -139,7 +149,7 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Description
+// Handles DELETE /users/{id}
 func (uh UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: deleteUser called")
 
