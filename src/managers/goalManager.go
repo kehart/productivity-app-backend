@@ -4,21 +4,20 @@ import (
 	"fmt"
 	"github.com/productivity-app-backend/src/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"gopkg.in/mgo.v2"
 	"net/http"
 	"net/url"
 )
 
-type GoalManager struct {
+type GoalManagerImpl struct {
 	Store utils.Store
 	//Session *mgo.Session
 }
 
-func (gm GoalManager) CreateGoal(newGoal *utils.Goal) (*utils.Goal, *utils.HTTPErrorLong) {
+func (gm GoalManagerImpl) CreateGoal(newGoal *utils.Goal) (*utils.Goal, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: GoalManager.CreateGoal called")
 
 	// Check the userId in newGoal exists
-	count, err := gm.Session.DB(utils.DbName).C(utils.UserCollection).FindId(newGoal.UserId).Count(); if count != 1 {
+	_, err := gm.Store.FindById(newGoal.UserId, utils.UserCollection); if err != nil { // TODO verify this condition works
 		errBody := utils.HttpError{
 			ErrorCode: 		http.StatusText(http.StatusBadRequest),
 			ErrorMessage:	"user with id user_id not found",
@@ -32,7 +31,7 @@ func (gm GoalManager) CreateGoal(newGoal *utils.Goal) (*utils.Goal, *utils.HTTPE
 
 	// Insert goal into db
 	newGoal.ID = primitive.NewObjectID()
-	err = gm.Session.DB(utils.DbName).C(utils.GoalCollection).Insert(newGoal); if err != nil {
+	err = gm.Store.Create(newGoal, utils.GoalCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"internal server error",
@@ -46,11 +45,10 @@ func (gm GoalManager) CreateGoal(newGoal *utils.Goal) (*utils.Goal, *utils.HTTPE
 	return newGoal, nil
 }
 
-func (gm GoalManager) GetSingleGoal(objId primitive.ObjectID) (*utils.Goal, *utils.HTTPErrorLong) {
+func (gm GoalManagerImpl) GetSingleGoal(objId primitive.ObjectID) (*utils.Goal, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: GoalManager.GetSingleGoal called")
 
-	var goal utils.Goal
-	err := gm.Session.DB(utils.DbName).C(utils.GoalCollection).FindId(objId).One(&goal); if err != nil {
+	goal, err := gm.Store.FindById(objId, utils.GoalCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	fmt.Sprintf("Goal with id %s not found", objId.String()),
@@ -61,15 +59,15 @@ func (gm GoalManager) GetSingleGoal(objId primitive.ObjectID) (*utils.Goal, *uti
 		}
 		return nil, &fullErr
 	}
-	return &goal, nil
+	return goal.(*utils.Goal), nil
 }
 
-func (gm GoalManager) GetGoals(queryVals *url.Values) (*[]utils.Goal, *utils.HTTPErrorLong) {
+func (gm GoalManagerImpl) GetGoals(queryVals *url.Values) (*[]utils.Goal, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: GoalManager.GetGoals called")
 
 	finalQueryVals := utils.ParseQueryString(queryVals)
-	var results []utils.Goal
-	err := gm.Session.DB(utils.DbName).C(utils.GoalCollection).Find(&finalQueryVals).All(&results); if err != nil {
+	//var results []utils.Goal
+	results, err := gm.Store.FindAll(utils.GoalCollection, finalQueryVals); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",
@@ -80,13 +78,13 @@ func (gm GoalManager) GetGoals(queryVals *url.Values) (*[]utils.Goal, *utils.HTT
 		}
 		return nil, &fullErr
 	}
-	return &results, nil
+	return results.(*[]utils.Goal), nil
 }
 
-func (gm GoalManager) DeleteGoal(objId primitive.ObjectID) *utils.HTTPErrorLong {
+func (gm GoalManagerImpl) DeleteGoal(objId primitive.ObjectID) *utils.HTTPErrorLong {
 	fmt.Println("LOG: GoalManager.DeleteGoal called")
 
-	err := gm.Session.DB(utils.DbName).C(utils.GoalCollection).RemoveId(objId); if err != nil {
+	err := gm.Store.Delete(objId, utils.GoalCollection); if err != nil {
 		if err.Error() == "not found" {
 			errBody := utils.HttpError{
 				ErrorCode:		http.StatusText(http.StatusNotFound),

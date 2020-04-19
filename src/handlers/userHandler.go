@@ -19,7 +19,7 @@ A module for handling HTTP requests to the User API. Supports:
  */
 
 type UserHandler struct {
-	UserManager utils.UserManager
+	UserManager utils.IUserManager
 }
 
 // Handles request for POST /users

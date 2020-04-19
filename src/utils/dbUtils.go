@@ -32,9 +32,14 @@ func (mdb MongoDb) FindById(id primitive.ObjectID, collectionName string) (inter
 	return &obj, err
 }
 
-func (mdb MongoDb) FindAll(collectionName string) (interface{}, error) {
+func (mdb MongoDb) FindAll(collectionName string, query ...*map[string]interface{}) (interface{}, error) {
 	var objs interface{}
-	err := mdb.Session.DB(mdb.DbName).C(collectionName).Find(nil).All(&objs)
+	var err error
+	if len(query) > 0 {
+		err = mdb.Session.DB(mdb.DbName).C(collectionName).Find(query[0]).All(&objs)
+	} else{
+		err = mdb.Session.DB(mdb.DbName).C(collectionName).Find(nil).All(&objs)
+	}
 	return objs, err
 }
 

@@ -298,7 +298,7 @@ func (_m *fakeStore) FindById(id primitive.ObjectID, collectionName string) (int
 
 // takes input of form (shouldErr, numUsers) and returns either
 // an error or a slice of numUsers users
-func (_m *fakeStore) FindAll(collectionName string) (interface{}, error)  {
+func (_m *fakeStore) FindAll(collectionName string,  query ...*map[string]interface{}) (interface{}, error)  {
 	ret := _m.Called()
 
 	shouldErr := ret.Bool(0); if shouldErr {

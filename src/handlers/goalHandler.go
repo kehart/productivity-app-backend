@@ -5,14 +5,13 @@ import (
 	"fmt"
 	valid "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
-	"github.com/productivity-app-backend/src/managers"
 	"github.com/productivity-app-backend/src/utils"
 	"io/ioutil"
 	"net/http"
 )
 
 type GoalHandler struct {
-	GoalManager managers.GoalManager
+	GoalManager utils.IGoalManager
 }
 
 // TODO should extend above to have some sort of status? like deleted/active, achieved/in-progress

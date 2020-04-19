@@ -2,6 +2,7 @@ package utils
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"net/url"
 	"time"
 )
 
@@ -59,12 +60,12 @@ type SleepEvent struct {
 
 type (
 
-	// db abstraction [users so far]
+	// db abstraction
 	Store interface {
 		Create(obj interface{}, collectionName string) error
 		Delete(id primitive.ObjectID, collectionName string) error
 		FindById(id primitive.ObjectID, collectionName string) (interface{}, error)
-		FindAll(collectionName string) (interface{}, error)
+		FindAll(collectionName string, query ...*map[string]interface{}) (interface{}, error)
 		Update(id primitive.ObjectID, obj interface{}, collectionName string) (interface{}, error)
 	}
 
@@ -75,6 +76,14 @@ type (
 		GetSingleUser(objId primitive.ObjectID) (*User, *HTTPErrorLong)
 		UpdateUser(userId primitive.ObjectID, updatesToApply *User) (*User, *HTTPErrorLong)
 		DeleteUser(objId primitive.ObjectID) *HTTPErrorLong
+	}
+
+	// Goal Manager Abstraction
+	IGoalManager interface {
+		CreateGoal(newGoal *Goal) (*Goal, *HTTPErrorLong)
+		GetSingleGoal(objId primitive.ObjectID) (*Goal, *HTTPErrorLong)
+		GetGoals(queryVals *url.Values) (*[]Goal, *HTTPErrorLong)
+		DeleteGoal(objId primitive.ObjectID) *HTTPErrorLong
 	}
 
 	// GoalManager Abstraction
