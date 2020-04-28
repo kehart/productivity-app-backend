@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/utils"
 	"github.com/stretchr/testify/assert"
@@ -68,11 +67,59 @@ func TestUserHandler_GetAllUsers(t *testing.T) {
 	//assert.Equal(t, http.StatusOK, response.Code, "OK response is expected")
 }
 
-// cases
-// -happy path
-// not found
 func TestUserHandler_DeleteUser(t *testing.T) {
+	id := primitive.NewObjectID()
+	user := utils.User{	ID: id }
+	e404 := utils.HTTPErrorLong {
+		Error:      utils.HttpError{},
+		StatusCode: http.StatusNotFound,
+	}
+	cases := []getUserTest{
+		{
+			shouldFail: false,
+			user: &user,
+			error: nil,
+		},
+		{
+			shouldFail: true,
+			user: &user,
+			error: &e404,
+		},
+	}
+	url := "/users/" + id.Hex()
 
+	for _, tc := range cases {
+		fakeManager := new(fakeUserManager)
+		handler := UserHandler{fakeManager}
+		if tc.shouldFail {
+			fakeManager.On("DeleteUser", id).Return(tc.shouldFail, tc.error.StatusCode)
+		} else {
+			fakeManager.On("DeleteUser", id).Return(tc.shouldFail)
+		}
+
+		r, _ := http.NewRequest(http.MethodDelete, url, nil)
+
+		//Normal testing stuff
+		rr := httptest.NewRecorder()
+
+		router := mux.NewRouter()
+		router.HandleFunc("/users/{id}", handler.DeleteUser).Methods(http.MethodDelete)
+
+		router.ServeHTTP(rr, r)
+
+
+		returnCode := rr.Code
+		returnObj, _ := ioutil.ReadAll(rr.Body)
+		if tc.shouldFail {
+			assert.Equal(t, returnCode, http.StatusNotFound)
+			assert.NotNil(t, rr.Body)
+			var err utils.HttpError
+			json.Unmarshal(returnObj, &err)
+			assert.Equal(t, tc.error.Error, err)
+		} else {
+			assert.Equal(t, returnCode, http.StatusNoContent)
+		}
+	}
 }
 
 // Gets a single user by ID
@@ -147,7 +194,6 @@ func TestUserHandler_GetSingleUser(t *testing.T) {
 			assert.NotNil(t, rr.Body)
 			var u utils.User
 			json.Unmarshal(returnObj, &u)
-			fmt.Println(u)
 			assert.Equal(t, *tc.user, u)
 		}
 	}
@@ -205,5 +251,15 @@ func (_m *fakeUserManager)  UpdateUser(userId primitive.ObjectID, updatesToApply
 }
 
 func (_m *fakeUserManager)  DeleteUser(objId primitive.ObjectID) *utils.HTTPErrorLong {
+	ret := _m.Called(objId)
+
+	shouldFail := ret.Bool(0); if shouldFail {
+		errorCode := ret.Int(1)
+		err := utils.HTTPErrorLong{
+			Error:      utils.HttpError{},
+			StatusCode: errorCode,
+		}
+		return &err
+	}
 	return nil
 }
