@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/utils"
@@ -35,31 +36,77 @@ Cases:
 /*
 Pass in:
  */
-//func TestUserHandler_CreateUser(t *testing.T) {
-//	type test struct {
-//		data []int
-//		answer int
-//	}
-//	tests := []test{
-//		{
-//			data:   []int{1, 2, 3},
-//			answer: 4,
-//		},
-//	}
-//
-//	for _, v := range tests {
-//		// run the function
-//		// check for err (expected, got)
-//		fmt.Println(v)
-//	}
-//}
+func TestUserHandler_CreateUser(t *testing.T) {
+	user := utils.User{
+		FirstName: "Bruce",
+		LastName:  "Lee",
+		ID:        primitive.ObjectID{},
+	}
+	userFail := utils.User{
+		FirstName: 	"",
+		LastName: 	"Lee",
+		ID: 		primitive.ObjectID{},
+	}
+	e400 := utils.HTTPErrorLong{
+		Error:      utils.HttpError{},
+		StatusCode: http.StatusBadRequest,
+	}
+	cases := []getUserTest{
+		{
+			shouldFail: false,
+			user: &user,
+			error: nil,
+		},
+		{
+			shouldFail: true,
+			user: &userFail,
+			error: &e400,
+		},
+	}
 
-// Returns a list of all users
-/*
-Cases:
--happy
--empty -> returns nil
-*/
+
+	url := "/users"
+
+	for _, tc := range cases {
+		fakeManager := new(fakeUserManager)
+		handler := UserHandler{fakeManager}
+		if tc.shouldFail {
+			fakeManager.On("CreateUser", tc.user).Return(tc.shouldFail, tc.error.StatusCode)
+		} else {
+			fakeManager.On("CreateUser", tc.user).Return(tc.shouldFail)
+		}
+		body := new(bytes.Buffer)
+		json.NewEncoder(body).Encode(tc.user)
+
+		r, _ := http.NewRequest(http.MethodPost, url, body)
+
+		//Normal testing stuff
+		rr := httptest.NewRecorder()
+
+		router := mux.NewRouter()
+		router.HandleFunc("/users", handler.CreateUser).Methods(http.MethodPost)
+
+		router.ServeHTTP(rr, r)
+
+		returnCode := rr.Code
+		returnObj, _ := ioutil.ReadAll(rr.Body)
+
+		if tc.shouldFail {
+			assert.Equal(t, returnCode, http.StatusBadRequest)
+			assert.NotNil(t, rr.Body)
+		} else {
+			assert.Equal(t, returnCode, http.StatusCreated)
+			assert.NotNil(t, rr.Body)
+			var user utils.User
+			json.Unmarshal(returnObj, &user)
+			//assert.NotEqual(t, tc.user.ID, user.ID)
+			assert.Equal(t, tc.user.FirstName, user.FirstName)
+			assert.Equal(t, tc.user.LastName, user.LastName)
+		}
+	}
+}
+
+
 func TestUserHandler_GetAllUsers(t *testing.T) {
 	cases := []bulkUserTest{
 		{
@@ -255,6 +302,16 @@ UserManager Interface Implementation
  */
 
 func (_m *fakeUserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
+	ret := _m.Called(newUser)
+
+	shouldFail := ret.Bool(0); if shouldFail {
+		errorCode := ret.Int(1)
+		err := utils.HTTPErrorLong{
+			Error:      utils.HttpError{},
+			StatusCode: errorCode,
+		}
+		return &err
+	}
 	return nil
 }
 

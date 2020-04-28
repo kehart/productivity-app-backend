@@ -61,11 +61,7 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	response := utils.HTTPResponseObject{
-		Meta: 	nil,
-		Data:	newUser,
-	}
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(newUser)
 }
 
 // Handles request for GET /users
