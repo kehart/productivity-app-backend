@@ -86,9 +86,9 @@ func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 // Handles request for GET /users/{id}
 func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getSingleUser called")
+
 	userID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(userID); if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return

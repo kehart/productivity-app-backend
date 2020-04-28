@@ -26,33 +26,6 @@ type GoalHandler struct {
 -invalid fields (dont match type of GoalCategory or GoalType) :( TODO
  */
 
-/*	var newUser utils.User
-
-	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	"Bad request",
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errBody)
-		return
-	}
-
-	json.Unmarshal(reqBody, &newUser)
-	_, genErr = valid.ValidateStruct(&newUser) ; if genErr != nil {
-			errBody := utils.HttpError{
-				ErrorCode:		http.StatusText(http.StatusBadRequest),
-				ErrorMessage:	genErr,
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(errBody)
-			return
-	}
-	err := utils.ValidateUser(&newUser); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
-		return
-	}*/
 
 // Handles POST /goals
 func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -12,10 +13,6 @@ import (
 	"net/http/httptest"
 	"testing"
 )
-
-type fakeUserManager struct {
-	mock.Mock
-}
 
 // Creates a new user with request data and inserts into DB
 /*
@@ -92,10 +89,10 @@ type getUserTest struct {
 }
 
 func TestUserHandler_GetSingleUser(t *testing.T) {
-	//e404 := utils.HTTPErrorLong{
-	//	Error:      utils.HttpError{},
-	//	StatusCode: http.StatusNotFound,
-	//}
+	e404 := utils.HTTPErrorLong{
+		Error:      utils.HttpError{},
+		StatusCode: http.StatusNotFound,
+	}
 	id := primitive.NewObjectID()
 	user := utils.User{
 		FirstName: "Bruce",
@@ -108,11 +105,11 @@ func TestUserHandler_GetSingleUser(t *testing.T) {
 			user: &user,
 			error: nil,
 		},
-		//{
-		//	shouldFail: true,
-		//	user: nil,
-		//	error: &e404,
-		//},
+		{
+			shouldFail: true,
+			user: nil,
+			error: &e404,
+		},
 	}
 
 	url := "/users/" + id.Hex()
@@ -121,41 +118,39 @@ func TestUserHandler_GetSingleUser(t *testing.T) {
 		fakeManager := new(fakeUserManager)
 		handler := UserHandler{fakeManager}
 		if tc.shouldFail {
-			fakeManager.On("GetSingleUser", id).Return(tc.shouldFail, tc.error.StatusCode) // shouldFail, errorCode
+			fakeManager.On("GetSingleUser", id).Return(tc.shouldFail, tc.error.StatusCode)
 		} else {
-			fakeManager.On("GetSingleUser", id).Return(tc.shouldFail) // shouldFail, errorCode
+			fakeManager.On("GetSingleUser", id).Return(tc.shouldFail)
 		}
-
 
 		r, _ := http.NewRequest(http.MethodGet, url, nil)
 
 		//Normal testing stuff
 		rr := httptest.NewRecorder()
 
-		//http.HandleFunc("/users/{id}", handler.GetSingleUser)
-		//http.HandlerFunc(handler.GetSingleUser).ServeHTTP(rr, r) // Calls GetSingleUSer
+		router := mux.NewRouter()
+		router.HandleFunc("/users/{id}", handler.GetSingleUser).Methods("GET")
 
-		sm := http.NewServeMux()
-		sm.HandleFunc("/users/{id}", handler.GetSingleUser)
-		sm.ServeHTTP(rr, r)
+		router.ServeHTTP(rr, r)
+
 
 		returnCode := rr.Code
 		returnObj, _ := ioutil.ReadAll(rr.Body)
 		if tc.shouldFail {
-			assert.Equal(t,returnCode, http.StatusNotFound)
+			assert.Equal(t, returnCode, http.StatusNotFound)
 			assert.NotNil(t, rr.Body)
-			var err utils.HTTPErrorLong
+			var err utils.HttpError
 			json.Unmarshal(returnObj, &err)
-			assert.Equal(t, err, tc.error)
+			assert.Equal(t, tc.error.Error, err)
 		} else {
 			assert.Equal(t, returnCode, http.StatusOK)
 			assert.NotNil(t, rr.Body)
 			var u utils.User
 			json.Unmarshal(returnObj, &u)
-			assert.Equal(t, tc.user, u)
+			fmt.Println(u)
+			assert.Equal(t, *tc.user, u)
 		}
 	}
-
 }
 
 // Updates user by ID; should be able to update first name and last name
@@ -167,6 +162,12 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 
 }
 
+// Implements IUserManager for use
+// in test environment
+type fakeUserManager struct {
+	mock.Mock
+}
+
 /*
 UserManager Interface Implementation
  */
@@ -175,18 +176,15 @@ func (_m *fakeUserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong 
 	return nil
 }
 
-func (_m *fakeUserManager)  GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
+func (_m *fakeUserManager) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
 	return nil, nil
 }
 
 // (shouldFail, errorCode)
-func (_m *fakeUserManager)  GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
+func (_m *fakeUserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
 	ret := _m.Called(objId)
 
-	fmt.Println("THIS WAS CALLED")
-
 	shouldFail := ret.Bool(0); if shouldFail {
-		fmt.Println("executred shouldDFail")
 		errorCode := ret.Int(1)
 		err := utils.HTTPErrorLong{
 			Error:      utils.HttpError{},
@@ -199,7 +197,6 @@ func (_m *fakeUserManager)  GetSingleUser(objId primitive.ObjectID) (*utils.User
 		LastName:  "Lee",
 		ID:        objId,
 	}
-	fmt.Println("Returning this user", user)
 	return &user, nil
 }
 
