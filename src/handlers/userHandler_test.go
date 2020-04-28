@@ -61,10 +61,42 @@ Cases:
 -empty -> returns nil
 */
 func TestUserHandler_GetAllUsers(t *testing.T) {
-	//request, _ := http.NewRequest("GET", "/users", nil) // nil for body
-	//response := httptest.NewRecorder()
-	//Router().ServeHTTP(response, request)
-	//assert.Equal(t, http.StatusOK, response.Code, "OK response is expected")
+	cases := []bulkUserTest{
+		{
+			users: []utils.User{ utils.User{}, utils.User{}, utils.User{}, },
+		},
+		{
+			users: nil,
+		},
+	}
+
+	url := "/users"
+
+	for _, tc := range cases {
+		fakeManager := new(fakeUserManager)
+		handler := UserHandler{fakeManager}
+		fakeManager.On("GetUsers").Return(tc.users)
+
+		r, _ := http.NewRequest(http.MethodGet, url, nil)
+
+		//Normal testing stuff
+		rr := httptest.NewRecorder()
+
+		router := mux.NewRouter()
+		router.HandleFunc("/users", handler.GetAllUsers).Methods(http.MethodGet)
+
+		router.ServeHTTP(rr, r)
+
+
+		returnCode := rr.Code
+		returnObj, _ := ioutil.ReadAll(rr.Body)
+
+		assert.Equal(t, returnCode, http.StatusOK)
+		assert.NotNil(t, rr.Body)
+		var users []utils.User
+		json.Unmarshal(returnObj, &users)
+		assert.Equal(t, tc.users, users)
+	}
 }
 
 func TestUserHandler_DeleteUser(t *testing.T) {
@@ -133,6 +165,10 @@ type getUserTest struct {
 	shouldFail 		bool
 	error			*utils.HTTPErrorLong
 	user			*utils.User
+}
+
+type bulkUserTest struct {
+	users	[]utils.User
 }
 
 func TestUserHandler_GetSingleUser(t *testing.T) {
@@ -223,7 +259,10 @@ func (_m *fakeUserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong 
 }
 
 func (_m *fakeUserManager) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
-	return nil, nil
+	ret := _m.Called()
+
+	users := ret.Get(0).([]utils.User)
+	return &users, nil
 }
 
 // (shouldFail, errorCode)
