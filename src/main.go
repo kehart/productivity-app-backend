@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	valid "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/handlers"
 	"github.com/productivity-app-backend/src/managers"
@@ -9,7 +9,6 @@ import (
 	"gopkg.in/mgo.v2"
 	"log"
 	"net/http"
-	valid "github.com/asaskevich/govalidator"
 )
 
 func getSession() *mgo.Session {
@@ -28,10 +27,6 @@ func initValidator() {
 }
 
 
-func homeLink(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome home!")
-}
-
 func main() {
 
 	initValidator()
@@ -49,8 +44,6 @@ func main() {
 	eh := handlers.EventHandler{EventManager: eventManager}
 
 	router := mux.NewRouter().StrictSlash(true)
-
-	router.HandleFunc("/", homeLink)
 
 	// User Routing
 	router.HandleFunc("/users", uh.CreateUser).Methods("POST")
