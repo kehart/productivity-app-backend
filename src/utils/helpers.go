@@ -39,3 +39,12 @@ func ParseQueryString(queryVals *url.Values) *map[string]interface{} {
 	}
 	return &finalQueryVals
 }
+
+const (
+	BadRequestMessage = "Bad request"
+)
+
+const (
+	InfoLog = "INFO: "
+	ErrorLog = "ERROR: "
+)
