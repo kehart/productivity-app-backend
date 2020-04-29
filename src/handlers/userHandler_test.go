@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -17,23 +18,23 @@ import (
 type getUserTest struct {
 	shouldFail 		bool
 	error			*utils.HTTPErrorLong
-	user			*utils.User
+	user			*models.User
 }
 
 type bulkUserTest struct {
-	users	[]utils.User
+	users	[]models.User
 }
 
 /*
 Pass in:
  */
 func TestUserHandler_CreateUser(t *testing.T) {
-	user := utils.User{
+	user := models.User{
 		FirstName: "Bruce",
 		LastName:  "Lee",
 		ID:        primitive.ObjectID{},
 	}
-	userFail := utils.User{
+	userFail := models.User{
 		FirstName: 	"",
 		LastName: 	"Lee",
 		ID: 		primitive.ObjectID{},
@@ -88,7 +89,7 @@ func TestUserHandler_CreateUser(t *testing.T) {
 		} else {
 			assert.Equal(t, returnCode, http.StatusCreated)
 			assert.NotNil(t, rr.Body)
-			var user utils.User
+			var user models.User
 			json.Unmarshal(returnObj, &user)
 			//assert.NotEqual(t, tc.user.ID, user.ID)
 			assert.Equal(t, tc.user.FirstName, user.FirstName)
@@ -101,7 +102,7 @@ func TestUserHandler_CreateUser(t *testing.T) {
 func TestUserHandler_GetAllUsers(t *testing.T) {
 	cases := []bulkUserTest{
 		{
-			users: []utils.User{ utils.User{}, utils.User{}, utils.User{}, },
+			users: []models.User{ models.User{}, models.User{}, models.User{}, }, // TODO cleanup
 		},
 		{
 			users: nil,
@@ -131,7 +132,7 @@ func TestUserHandler_GetAllUsers(t *testing.T) {
 
 		assert.Equal(t, returnCode, http.StatusOK)
 		assert.NotNil(t, rr.Body)
-		var users []utils.User
+		var users []models.User
 		json.Unmarshal(returnObj, &users)
 		assert.Equal(t, tc.users, users)
 	}
@@ -139,7 +140,7 @@ func TestUserHandler_GetAllUsers(t *testing.T) {
 
 func TestUserHandler_DeleteUser(t *testing.T) {
 	id := primitive.NewObjectID()
-	user := utils.User{	ID: id }
+	user := models.User{	ID: id }
 	e404 := utils.HTTPErrorLong {
 		Error:      utils.HttpError{},
 		StatusCode: http.StatusNotFound,
@@ -200,7 +201,7 @@ func TestUserHandler_GetSingleUser(t *testing.T) {
 		StatusCode: http.StatusNotFound,
 	}
 	id := primitive.NewObjectID()
-	user := utils.User{
+	user := models.User{
 		FirstName: "Bruce",
 		LastName:  "Lee",
 		ID:        id,
@@ -251,7 +252,7 @@ func TestUserHandler_GetSingleUser(t *testing.T) {
 		} else {
 			assert.Equal(t, returnCode, http.StatusOK)
 			assert.NotNil(t, rr.Body)
-			var u utils.User
+			var u models.User
 			json.Unmarshal(returnObj, &u)
 			assert.Equal(t, *tc.user, u)
 		}
@@ -266,11 +267,11 @@ func TestUserHandler_GetSingleUser(t *testing.T) {
 func TestUserHandler_UpdateUser(t *testing.T) {
 	// 404, 400, 200
 	id := primitive.ObjectID{}
-	userSuccess := utils.User{
+	userSuccess := models.User{
 		FirstName: "Jackie",
 		ID:       	id,
 	}
-	userFailure := utils.User{
+	userFailure := models.User{
 		FirstName: "",
 		ID:        id,
 	}
@@ -335,7 +336,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 		} else {
 			assert.Equal(t, returnCode, http.StatusOK)
 			assert.NotNil(t, rr.Body)
-			var u utils.User
+			var u models.User
 			json.Unmarshal(returnObj, &u)
 			assert.Equal(t, tc.user.FirstName, u.FirstName)
 			assert.Equal(t, tc.user.ID, u.ID)
@@ -354,7 +355,7 @@ type fakeUserManager struct {
 UserManager Interface Implementation
  */
 
-func (_m *fakeUserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
+func (_m *fakeUserManager) CreateUser(newUser *models.User) *utils.HTTPErrorLong {
 	ret := _m.Called(newUser)
 
 	shouldFail := ret.Bool(0); if shouldFail {
@@ -368,15 +369,15 @@ func (_m *fakeUserManager) CreateUser(newUser *utils.User) *utils.HTTPErrorLong 
 	return nil
 }
 
-func (_m *fakeUserManager) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
+func (_m *fakeUserManager) GetUsers() (*[]models.User, *utils.HTTPErrorLong) {
 	ret := _m.Called()
 
-	users := ret.Get(0).([]utils.User)
+	users := ret.Get(0).([]models.User)
 	return &users, nil
 }
 
 // (shouldFail, errorCode)
-func (_m *fakeUserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
+func (_m *fakeUserManager) GetSingleUser(objId primitive.ObjectID) (*models.User, *utils.HTTPErrorLong) {
 	ret := _m.Called(objId)
 
 	shouldFail := ret.Bool(0); if shouldFail {
@@ -387,7 +388,7 @@ func (_m *fakeUserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User,
 		}
 		return nil, &err
 	}
-	user := utils.User{
+	user := models.User{
 		FirstName: "Bruce",
 		LastName:  "Lee",
 		ID:        objId,
@@ -396,8 +397,7 @@ func (_m *fakeUserManager) GetSingleUser(objId primitive.ObjectID) (*utils.User,
 }
 
 // shouldFail, statusCode
-func (_m *fakeUserManager) UpdateUser(userId primitive.ObjectID, updatesToApply *utils.User) (*utils.User, *utils.HTTPErrorLong) {
-	//fmt.Println(_m, userId, updatesToApply)
+func (_m *fakeUserManager) UpdateUser(userId primitive.ObjectID, updatesToApply *models.User) (*models.User, *utils.HTTPErrorLong) {
 	ret := _m.Called(userId, updatesToApply)
 
 	shouldFail := ret.Bool(0); if shouldFail {
@@ -408,7 +408,7 @@ func (_m *fakeUserManager) UpdateUser(userId primitive.ObjectID, updatesToApply 
 		}
 		return nil, &err
 	}
-	user := utils.User{
+	user := models.User{
 		FirstName: "Bruce",
 		LastName:  "Lee",
 		ID:        userId,

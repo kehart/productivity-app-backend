@@ -2,6 +2,7 @@ package	managers
 
 import (
 	"errors"
+	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -11,7 +12,7 @@ import (
 )
 
 type createUpdateUserTest struct {
-	user 		*utils.User
+	user 		*models.User
 	error 		*utils.HTTPErrorLong
 	shouldFail 	bool
 }
@@ -26,7 +27,7 @@ func TestInsertUser(t *testing.T) {
 	assert := assert.New(t)
 
 	id := primitive.ObjectID{}
-	u := utils.User{
+	u := models.User{
 		FirstName: "Bruce",
 		LastName:  "Lee",
 		ID:        id,
@@ -97,7 +98,7 @@ func TestGetEvents(t *testing.T) {
 		manager := UserManagerImpl{Store:db}
 		db.On("FindAll").Return(tc.shouldFail, tc.numUsers)
 
-		var users *[]utils.User
+		var users *[]models.User
 		var err *utils.HTTPErrorLong
 		users, err = manager.GetUsers() // calls FindAll
 
@@ -135,7 +136,7 @@ func TestUserManager_GetSingleUser(t *testing.T) {
 		db := new(fakeStore)
 		manager := UserManagerImpl{Store:db}
 
-		var user *utils.User
+		var user *models.User
 		var err *utils.HTTPErrorLong
 		testId := primitive.ObjectID{}
 		db.On("FindById", testId).Return(tc.shouldFail)
@@ -155,7 +156,7 @@ func TestUserManager_UpdateUser(t *testing.T) {
 	assert := assert.New(t)
 
 	id := primitive.ObjectID{}
-	updateData := utils.User{
+	updateData := models.User{
 		FirstName: "Jackie",
 		LastName:  "",
 		ID:        id,
@@ -241,7 +242,7 @@ func TestUserManager_DeleteUser(t *testing.T) {
 		db := new(fakeStore)
 		manager := UserManagerImpl{Store:db}
 
-		//var user *utils.User
+		//var user *models.User
 		var err *utils.HTTPErrorLong
 		testId := primitive.ObjectID{}
 		if tc.shouldFail && tc.error.StatusCode == http.StatusNotFound {
@@ -287,7 +288,7 @@ func (_m *fakeStore) FindById(id primitive.ObjectID, collectionName string) (int
 	shouldErr := ret.Bool(0); if shouldErr {
 		return nil, errors.New("error")
 	} else {
-		user := utils.User{
+		user := models.User{
 			FirstName: "Bruce",
 			LastName:  "Lee",
 			ID:        id,
@@ -305,7 +306,7 @@ func (_m *fakeStore) FindAll(collectionName string,  query ...*map[string]interf
 		return nil, errors.New("error")
 	} else {
 		numUsers := ret.Int(1)
-		users := make([]utils.User, numUsers)
+		users := make([]models.User, numUsers)
 		return &users, nil
 	}
 }

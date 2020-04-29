@@ -2,6 +2,8 @@ package managers
 
 import (
 	"fmt"
+	"github.com/productivity-app-backend/src/interfaces"
+	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
@@ -9,11 +11,10 @@ import (
 )
 
 type GoalManagerImpl struct {
-	Store utils.Store
-	//Session *mgo.Session
+	Store interfaces.Store
 }
 
-func (gm GoalManagerImpl) CreateGoal(newGoal *utils.Goal) (*utils.Goal, *utils.HTTPErrorLong) {
+func (gm GoalManagerImpl) CreateGoal(newGoal *models.Goal) (*models.Goal, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: GoalManager.CreateGoal called")
 
 	// Check the userId in newGoal exists
@@ -45,7 +46,7 @@ func (gm GoalManagerImpl) CreateGoal(newGoal *utils.Goal) (*utils.Goal, *utils.H
 	return newGoal, nil
 }
 
-func (gm GoalManagerImpl) GetSingleGoal(objId primitive.ObjectID) (*utils.Goal, *utils.HTTPErrorLong) {
+func (gm GoalManagerImpl) GetSingleGoal(objId primitive.ObjectID) (*models.Goal, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: GoalManager.GetSingleGoal called")
 
 	goal, err := gm.Store.FindById(objId, utils.GoalCollection); if err != nil {
@@ -59,14 +60,13 @@ func (gm GoalManagerImpl) GetSingleGoal(objId primitive.ObjectID) (*utils.Goal, 
 		}
 		return nil, &fullErr
 	}
-	return goal.(*utils.Goal), nil
+	return goal.(*models.Goal), nil
 }
 
-func (gm GoalManagerImpl) GetGoals(queryVals *url.Values) (*[]utils.Goal, *utils.HTTPErrorLong) {
+func (gm GoalManagerImpl) GetGoals(queryVals *url.Values) (*[]models.Goal, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: GoalManager.GetGoals called")
 
 	finalQueryVals := utils.ParseQueryString(queryVals)
-	//var results []utils.Goal
 	results, err := gm.Store.FindAll(utils.GoalCollection, finalQueryVals); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
@@ -78,7 +78,7 @@ func (gm GoalManagerImpl) GetGoals(queryVals *url.Values) (*[]utils.Goal, *utils
 		}
 		return nil, &fullErr
 	}
-	return results.(*[]utils.Goal), nil
+	return results.(*[]models.Goal), nil
 }
 
 func (gm GoalManagerImpl) DeleteGoal(objId primitive.ObjectID) *utils.HTTPErrorLong {

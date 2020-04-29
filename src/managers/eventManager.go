@@ -2,24 +2,23 @@ package managers
 
 import (
 	"fmt"
+	"github.com/productivity-app-backend/src/interfaces"
 	"github.com/productivity-app-backend/src/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"gopkg.in/mgo.v2"
 	"net/http"
 	"net/url"
 )
 
-type EventManager struct {
-	Session *mgo.Session
+type EventManagerImpl struct {
+	Store 	interfaces.Store
 }
 
-func (em EventManager) InsertEvent(newSleepEvent *utils.SleepEvent) *utils.HTTPErrorLong {
+func (em EventManagerImpl) CreateEvent(event *interfaces.IEvent) (*interfaces.IEvent, *utils.HTTPErrorLong){
 	fmt.Println("LOG: Manager.InsertEvent called")
 
-	// Assign new ID to new user
-	newSleepEvent.Id = primitive.NewObjectID()
-	var user utils.User
-	err := em.Session.DB(utils.DbName).C(utils.UserCollection).FindId(newSleepEvent.UserId).One(&user); if err != nil {
+	// Validate user being referenced exists
+	userId := (*event).GetUnderlyingEvent().UserId
+	_, err := em.Store.FindById(userId, utils.UserCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	"User with id user_id not found", // TODO
@@ -28,29 +27,11 @@ func (em EventManager) InsertEvent(newSleepEvent *utils.SleepEvent) *utils.HTTPE
 			Error:      errBody,
 			StatusCode: http.StatusNotFound,
 		}
-		return &fullErr
+		return nil, &fullErr
 	}
+
 	// Insert user into DB
-	errLong := em.Session.DB(utils.DbName).C(utils.EventCollection).Insert(newSleepEvent); if errLong != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	"Server error",
-		}
-		fullErr := utils.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusInternalServerError,
-		}
-		return &fullErr
-	}
-	return nil
-}
-
-func (em EventManager) GetEvents(queryVals *url.Values) (*[]utils.Goal, *utils.HTTPErrorLong) {
-	fmt.Println("LOG: GoalManager.GetGoals called")
-
-	finalQueryVals := utils.ParseQueryString(queryVals)
-	var results []utils.Goal
-	err := em.Session.DB(utils.DbName).C(utils.EventCollection).Find(&finalQueryVals).All(&results); if err != nil {
+	errLong := em.Store.Create(event, utils.EventCollection); if errLong != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",
@@ -61,15 +42,39 @@ func (em EventManager) GetEvents(queryVals *url.Values) (*[]utils.Goal, *utils.H
 		}
 		return nil, &fullErr
 	}
-	return &results, nil
+	return event, nil
 }
 
-// TODO this should not return a SleepEvent but a generic event
-func (em EventManager) GetSingleEvent(objId primitive.ObjectID) (*utils.SleepEvent, *utils.HTTPErrorLong) {
+func (em EventManagerImpl) GetEvents(queryVals *url.Values) (*[]interfaces.IEvent, *utils.HTTPErrorLong) {
+	fmt.Println("LOG: EventManager.GetEvents called")
+
+	var results interface{} // change
+	var err interface{} // change
+	if queryVals != nil {
+		finalQueryVals := utils.ParseQueryString(queryVals)
+		results, err = em.Store.FindAll(utils.EventCollection, finalQueryVals)
+	} else {
+		results, err = em.Store.FindAll(utils.EventCollection)
+	}
+
+	if err != nil {
+		errBody := utils.HttpError{
+			ErrorCode:		http.StatusText(http.StatusInternalServerError),
+			ErrorMessage: 	"Server error",
+		}
+		fullErr := utils.HTTPErrorLong{
+			Error:      errBody,
+			StatusCode: http.StatusInternalServerError,
+		}
+		return nil, &fullErr
+	}
+	return results.(*[]interfaces.IEvent), nil
+}
+
+func (em EventManagerImpl) GetSingleEvent(objId primitive.ObjectID) (*interfaces.IEvent, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: EventManager.GetSingleEvent called")
 
-	var event utils.SleepEvent
-	err := em.Session.DB(utils.DbName).C(utils.EventCollection).FindId(objId).One(&event); if err != nil {
+	event, err := em.Store.FindById(objId, utils.EventCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	fmt.Sprintf("Event with id %s not found", objId.String()),
@@ -80,5 +85,5 @@ func (em EventManager) GetSingleEvent(objId primitive.ObjectID) (*utils.SleepEve
 		}
 		return nil, &fullErr
 	}
-	return &event, nil
+	return event.(*interfaces.IEvent), nil
 }

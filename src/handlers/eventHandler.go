@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/productivity-app-backend/src/interfaces"
 	"github.com/productivity-app-backend/src/utils"
 	"io/ioutil"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 
 type EventHandler struct {
-	EventManager utils.IEventManager
+	EventManager interfaces.IEventManager
 }
 
 
@@ -35,7 +36,7 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &eventMap)
 
 	// Custom Unmarshalling to Specific Event Object
-	event, err := utils.NewEvent(eventMap); if err != nil {
+	event, err := interfaces.NewEvent(eventMap); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
 			ErrorMessage:	err, // TODO

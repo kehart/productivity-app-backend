@@ -5,6 +5,8 @@ import (
 	"fmt"
 	valid "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
+	"github.com/productivity-app-backend/src/interfaces"
+	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"io/ioutil"
 	"net/http"
@@ -19,14 +21,14 @@ A module for handling HTTP requests to the User API. Supports:
  */
 
 type UserHandler struct {
-	UserManager utils.IUserManager
+	UserManager interfaces.IUserManager
 }
 
 // Handles request for POST /users
 // Takes in JSON user object
 func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createUser called")
-	var newUser utils.User
+	var newUser models.User
 
 	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
 		errBody := utils.HttpError{
@@ -48,7 +50,7 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(errBody)
 			return
 	}
-	err := utils.ValidateUser(&newUser); if err != nil {
+	err := models.ValidateUser(&newUser); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return
@@ -69,7 +71,7 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: getAllUsers called")
 
-	var results *[]utils.User
+	var results *[]models.User
 	results, err := uh.UserManager.GetUsers(); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
@@ -112,7 +114,7 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var updatesToApply utils.User
+	var updatesToApply models.User
 	reqBody, err := ioutil.ReadAll(r.Body); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),

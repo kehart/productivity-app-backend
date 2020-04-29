@@ -5,13 +5,15 @@ import (
 	"fmt"
 	valid "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
+	"github.com/productivity-app-backend/src/interfaces"
+	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"io/ioutil"
 	"net/http"
 )
 
 type GoalHandler struct {
-	GoalManager utils.IGoalManager
+	GoalManager interfaces.IGoalManager
 }
 
 // TODO should extend above to have some sort of status? like deleted/active, achieved/in-progress
@@ -32,7 +34,7 @@ func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOG: createGoal called")
 
 	// Read request
-	var newGoal utils.Goal
+	var newGoal models.Goal
 
 	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
 		errBody := utils.HttpError{
@@ -55,7 +57,7 @@ func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(errBody)
 		return
 	}
-	err := utils.ValidateGoal(&newGoal); if err != nil {
+	err := models.ValidateGoal(&newGoal); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
 		return

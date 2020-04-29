@@ -2,6 +2,8 @@ package managers
 
 import (
 	"fmt"
+	"github.com/productivity-app-backend/src/interfaces"
+	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
@@ -9,10 +11,10 @@ import (
 
 // Concrete implementation of UserManager interface
 type UserManagerImpl struct {
-	Store utils.Store
+	Store interfaces.Store
 }
 
-func (um UserManagerImpl) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
+func (um UserManagerImpl) CreateUser(newUser *models.User) *utils.HTTPErrorLong {
 	fmt.Println("LOG: UserManager.CreateUser called")
 
 	// Assign new ID to new user
@@ -32,10 +34,10 @@ func (um UserManagerImpl) CreateUser(newUser *utils.User) *utils.HTTPErrorLong {
 	return nil
 }
 
-func (um UserManagerImpl ) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
+func (um UserManagerImpl ) GetUsers() (*[]models.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: UserManager.GetUsers called")
 
-//	var results *[]utils.User
+//	var results *[]models.User
 	results, err := um.Store.FindAll(utils.UserCollection); if err != nil {
 		errBody := utils.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
@@ -47,10 +49,10 @@ func (um UserManagerImpl ) GetUsers() (*[]utils.User, *utils.HTTPErrorLong) {
 		}
 		return nil, &fullErr
 	}
-	return results.(*[]utils.User), nil
+	return results.(*[]models.User), nil
 }
 
-func (um UserManagerImpl ) GetSingleUser(objId primitive.ObjectID) (*utils.User, *utils.HTTPErrorLong) {
+func (um UserManagerImpl ) GetSingleUser(objId primitive.ObjectID) (*models.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: UserManager.GetSingleUser called")
 
 	user, err := um.Store.FindById(objId, utils.UserCollection); if err != nil {
@@ -64,11 +66,11 @@ func (um UserManagerImpl ) GetSingleUser(objId primitive.ObjectID) (*utils.User,
 		}
 		return nil, &fullErr
 	}
-	return user.(*utils.User), nil
+	return user.(*models.User), nil
 }
 
 // updatedUser contains all the information for the update, including the ID of the user
-func (um UserManagerImpl ) UpdateUser(userId primitive.ObjectID, updatesToApply *utils.User) (*utils.User, *utils.HTTPErrorLong) {
+func (um UserManagerImpl ) UpdateUser(userId primitive.ObjectID, updatesToApply *models.User) (*models.User, *utils.HTTPErrorLong) {
 	fmt.Println("LOG: UserManager.UpdateUser called")
 
 	// Read the current state of the user from the DB and place data into existingUser
@@ -84,7 +86,7 @@ func (um UserManagerImpl ) UpdateUser(userId primitive.ObjectID, updatesToApply 
 		return nil, &fullErr
 	}
 
-	existingUser := obj.(*utils.User)
+	existingUser := obj.(*models.User)
 
 	// Make changes to existing user based on updatesToApply data
 	if len(updatesToApply.FirstName) > 0 {
@@ -105,7 +107,7 @@ func (um UserManagerImpl ) UpdateUser(userId primitive.ObjectID, updatesToApply 
 		}
 		return nil, &fullErr
 	}
-	return updatedUser.(*utils.User), nil
+	return updatedUser.(*models.User), nil
 }
 
 func (um UserManagerImpl) DeleteUser(objId primitive.ObjectID) *utils.HTTPErrorLong {
