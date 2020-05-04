@@ -11,3 +11,15 @@ type HTTPErrorLong struct {
 	Error 			HttpError
 	StatusCode		int // an HTTP error code
 }
+
+func NewHTTPErrorLong(errorCode string, errorMsg interface{}, statusCode int) HTTPErrorLong {
+	errBody := HttpError{
+		ErrorCode:    errorCode,
+		ErrorMessage: errorMsg,
+	}
+	longErr := HTTPErrorLong{
+		Error:      errBody,
+		StatusCode: statusCode,
+	}
+	return longErr
+}

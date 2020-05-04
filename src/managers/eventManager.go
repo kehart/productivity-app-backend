@@ -21,27 +21,13 @@ func (em EventManagerImpl) CreateEvent(event *interfaces.IEvent) (*interfaces.IE
 	userId := (*event).GetUnderlyingEvent().UserId
 	var user models.User
 	err := em.Store.FindById(userId, utils.UserCollection, &user); if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	"User with id user_id not found", // TODO
-		}
-		fullErr := models.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusNotFound,
-		}
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusNotFound), "User with id user_id not found", http.StatusNotFound)
 		return nil, &fullErr
 	}
 
 	// Insert user into DB
 	errLong := em.Store.Create(event, utils.EventCollection); if errLong != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	"Server error",
-		}
-		fullErr := models.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusInternalServerError,
-		}
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 		return nil, &fullErr
 	}
 	return event, nil
@@ -60,14 +46,7 @@ func (em EventManagerImpl) GetEvents(queryVals *url.Values) (*[]interfaces.IEven
 	}
 
 	if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	"Server error",
-		}
-		fullErr := models.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusInternalServerError,
-		}
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 		return nil, &fullErr
 	}
 	return &results, nil
@@ -77,15 +56,8 @@ func (em EventManagerImpl) GetSingleEvent(objId primitive.ObjectID) (*interfaces
 	fmt.Println("LOG: EventManager.GetSingleEvent called")
 
 	var event interfaces.IEvent
-	err := em.Store.FindById2(objId, utils.EventCollection, &event); if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	fmt.Sprintf("Event with id %s not found", objId.String()),
-		}
-		fullErr := models.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusNotFound,
-		}
+	err := em.Store.FindById(objId, utils.EventCollection, &event); if err != nil {
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusNotFound), fmt.Sprintf("Event with id %s not found", objId.String()), http.StatusNotFound)
 		return nil, &fullErr
 	}
 	return &event, nil

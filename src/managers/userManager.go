@@ -23,14 +23,7 @@ func (um UserManagerImpl) CreateUser(newUser *models.User) *models.HTTPErrorLong
 
 	// Insert user into DB
 	err := um.Store.Create(newUser, utils.UserCollection); if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	utils.InternalServerErrorMessage,
-		}
-		fullErr := models.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusInternalServerError,
-		}
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return &fullErr
 	}
@@ -42,40 +35,20 @@ func (um UserManagerImpl ) GetUsers() (*[]models.User, *models.HTTPErrorLong) {
 
 	var results []models.User
 	err := um.Store.FindAll(utils.UserCollection, &results); if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	utils.InternalServerErrorMessage,
-		}
-		fullErr := models.HTTPErrorLong{
-			Error: 		errBody,
-			StatusCode: http.StatusInternalServerError,
-		}
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return nil, &fullErr
 	}
 
-	//var users []models.User
-	//for _, u := range results {
-	//	fmt.Println(u)
-	//	users = append(users, u.(models.User))
-	//}
 	return &results, nil
 }
 
 func (um UserManagerImpl ) GetSingleUser(objId primitive.ObjectID) (*models.User, *models.HTTPErrorLong) {
 	log.Print(utils.InfoLog + "UserManager:GetSingleUser called")
 
-	//user, err := um.Store.FindById(objId, utils.UserCollection); if err != nil {
 	var user models.User
 	err := um.Store.FindById(objId, utils.UserCollection, &user); if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	fmt.Sprintf("User with id %s not found", objId.String()),
-		}
-		fullErr := models.HTTPErrorLong {
-			Error:      errBody,
-			StatusCode: http.StatusNotFound,
-		}
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusNotFound), fmt.Sprintf("User with id %s not found", objId.String()), http.StatusNotFound)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return nil, &fullErr
 	}
@@ -87,44 +60,27 @@ func (um UserManagerImpl ) UpdateUser(userId primitive.ObjectID, updatesToApply 
 	log.Print(utils.InfoLog + "UserManager:UpdateUser called")
 
 	// Read the current state of the user from the DB and place data into existingUser
-	var existingUser2 models.User
-	//obj, err := um.Store.FindById(userId, utils.UserCollection); if err != nil {
-	err := um.Store.FindById2(userId, utils.UserCollection, &existingUser2); if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusNotFound),
-			ErrorMessage: 	fmt.Sprintf("User with id %s not found", userId.String()),
-		}
-		fullErr := models.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusNotFound,
-		}
+	var existingUser models.User
+	err := um.Store.FindById(userId, utils.UserCollection, &existingUser); if err != nil {
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusNotFound), fmt.Sprintf("User with id %s not found", userId.String()), http.StatusNotFound)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return nil, &fullErr
 	}
-
-	//existingUser := obj.(*models.User)
 
 	// Make changes to existing user based on updatesToApply data
 	if len(updatesToApply.FirstName) > 0 {
-		existingUser2.FirstName = updatesToApply.FirstName
+		existingUser.FirstName = updatesToApply.FirstName
 	}
 	if len(updatesToApply.LastName) > 0 {
-		existingUser2.LastName = updatesToApply.LastName
+		existingUser.LastName = updatesToApply.LastName
 	}
 
-	err = um.Store.Update(userId, existingUser2, utils.UserCollection); if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:    http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: utils.InternalServerErrorMessage,
-		}
-		fullErr := models.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusInternalServerError,
-		}
+	err = um.Store.Update(userId, existingUser, utils.UserCollection); if err != nil {
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return nil, &fullErr
 	}
-	return &existingUser2, nil
+	return &existingUser, nil
 }
 
 func (um UserManagerImpl) DeleteUser(objId primitive.ObjectID) *models.HTTPErrorLong {
@@ -132,25 +88,11 @@ func (um UserManagerImpl) DeleteUser(objId primitive.ObjectID) *models.HTTPError
 
 	err := um.Store.Delete(objId, utils.UserCollection); if err != nil {
 		if err.Error() == "not found" {
-			errBody := models.HttpError{
-				ErrorCode:		http.StatusText(http.StatusNotFound),
-				ErrorMessage: 	"ID not found",
-			}
-			fullErr := models.HTTPErrorLong{
-				Error:      errBody,
-				StatusCode: http.StatusNotFound,
-			}
 			log.Println(utils.ErrorLog + "Insert body here") // TODO ??
+			fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusNotFound), "ID not found", http.StatusNotFound)
 			return &fullErr
 		}
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage: 	utils.InternalServerErrorMessage,
-		}
-		fullErr := models.HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusInternalServerError,
-		}
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return &fullErr
 	}
