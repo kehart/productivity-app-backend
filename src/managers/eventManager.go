@@ -20,7 +20,7 @@ func (em EventManagerImpl) CreateEvent(event *interfaces.IEvent) (*interfaces.IE
 	// Validate user being referenced exists
 	userId := (*event).GetUnderlyingEvent().UserId
 	var user models.User
-	err := em.Store.FindById2(userId, utils.UserCollection, &user); if err != nil {
+	err := em.Store.FindById(userId, utils.UserCollection, &user); if err != nil {
 		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	"User with id user_id not found", // TODO
@@ -54,9 +54,9 @@ func (em EventManagerImpl) GetEvents(queryVals *url.Values) (*[]interfaces.IEven
 	var err interface{} // change
 	if queryVals != nil {
 		finalQueryVals := utils.ParseQueryString(queryVals)
-		err = em.Store.FindAll2(utils.EventCollection, &results, finalQueryVals)
+		err = em.Store.FindAll(utils.EventCollection, &results, finalQueryVals)
 	} else {
-		err = em.Store.FindAll2(utils.EventCollection, &results)
+		err = em.Store.FindAll(utils.EventCollection, &results)
 	}
 
 	if err != nil {

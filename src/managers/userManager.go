@@ -41,7 +41,7 @@ func (um UserManagerImpl ) GetUsers() (*[]models.User, *models.HTTPErrorLong) {
 	log.Print(utils.InfoLog + "UserManager:GetUsers called")
 
 	var results []models.User
-	err := um.Store.FindAll2(utils.UserCollection, &results); if err != nil {
+	err := um.Store.FindAll(utils.UserCollection, &results); if err != nil {
 		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	utils.InternalServerErrorMessage,
@@ -67,7 +67,7 @@ func (um UserManagerImpl ) GetSingleUser(objId primitive.ObjectID) (*models.User
 
 	//user, err := um.Store.FindById(objId, utils.UserCollection); if err != nil {
 	var user models.User
-	err := um.Store.FindById2(objId, utils.UserCollection, &user); if err != nil {
+	err := um.Store.FindById(objId, utils.UserCollection, &user); if err != nil {
 		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	fmt.Sprintf("User with id %s not found", objId.String()),
@@ -112,7 +112,7 @@ func (um UserManagerImpl ) UpdateUser(userId primitive.ObjectID, updatesToApply 
 		existingUser2.LastName = updatesToApply.LastName
 	}
 
-	err = um.Store.Update2(userId, existingUser2, utils.UserCollection); if err != nil {
+	err = um.Store.Update(userId, existingUser2, utils.UserCollection); if err != nil {
 		errBody := models.HttpError{
 			ErrorCode:    http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: utils.InternalServerErrorMessage,

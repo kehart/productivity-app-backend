@@ -10,11 +10,8 @@ type (
 	Store interface {
 		Create(obj interface{}, collectionName string) error
 		Delete(id primitive.ObjectID, collectionName string) error
-	//	FindById(id primitive.ObjectID, collectionName string) (interface{}, error)
-		//FindAll(collectionName string, query ...*map[string]interface{}) ([]interface{}, error)
-		FindAll2(collectionName string, dest interface{}, query ...*map[string]interface{}) error
-		//Update(id primitive.ObjectID, obj interface{}, collectionName string) (interface{}, error)
-		FindById2(id primitive.ObjectID, collectionName string, dest interface{}) error
-		Update2(id primitive.ObjectID, obj interface{}, collectionName string) error
+		FindAll(collectionName string, dest interface{}, query ...*map[string]interface{}) error
+		FindById(id primitive.ObjectID, collectionName string, dest interface{}) error
+		Update(id primitive.ObjectID, obj interface{}, collectionName string) error
 	}
 )

@@ -19,7 +19,7 @@ func (gm GoalManagerImpl) CreateGoal(newGoal *models.Goal) (*models.Goal, *model
 
 	// Check the userId in newGoal exists
 	var user models.User
-	err := gm.Store.FindById2(newGoal.UserId, utils.UserCollection, &user); if err != nil { // TODO verify this condition works
+	err := gm.Store.FindById(newGoal.UserId, utils.UserCollection, &user); if err != nil { // TODO verify this condition works
 		errBody := models.HttpError{
 			ErrorCode: 		http.StatusText(http.StatusBadRequest),
 			ErrorMessage:	utils.NotFoundErrorString("User", newGoal.UserId.String()),
@@ -51,7 +51,7 @@ func (gm GoalManagerImpl) GetSingleGoal(objId primitive.ObjectID) (*models.Goal,
 	log.Print(utils.InfoLog + "GoalManager:GetSingleGoal called")
 
 	var goal models.Goal
-	err := gm.Store.FindById2(objId, utils.GoalCollection, &goal); if err != nil {
+	err := gm.Store.FindById(objId, utils.GoalCollection, &goal); if err != nil {
 		errBody := models.HttpError {
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	utils.NotFoundErrorString("Goal", objId.String()),
@@ -70,7 +70,7 @@ func (gm GoalManagerImpl) GetGoals(queryVals *url.Values) (*[]models.Goal, *mode
 
 	finalQueryVals := utils.ParseQueryString(queryVals)
 	var goals []models.Goal
-	err := gm.Store.FindAll2(utils.GoalCollection, &goals, finalQueryVals) ; if err != nil {
+	err := gm.Store.FindAll(utils.GoalCollection, &goals, finalQueryVals) ; if err != nil {
 		errBody := models.HttpError {
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	utils.InternalServerErrorMessage,
