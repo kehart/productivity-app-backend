@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/productivity-app-backend/src/models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 	"net/url"
@@ -8,13 +11,13 @@ import (
 )
 
 // Used to validate and format ObjectIds for use in a Mongo DB
-func FormatObjectId(userID string) (primitive.ObjectID, *HTTPErrorLong) {
+func FormatObjectId(userID string) (primitive.ObjectID, *models.HTTPErrorLong) {
 	objId, err := primitive.ObjectIDFromHex(userID); if err != nil {
-		errBody := HttpError{
+		errBody := models.HttpError{
 			ErrorCode:    http.StatusText(http.StatusBadRequest),
 			ErrorMessage: "Bad id syntax",
 		}
-		fullErr := HTTPErrorLong{
+		fullErr := models.HTTPErrorLong{
 			Error:      errBody,
 			StatusCode: http.StatusBadRequest,
 		}
@@ -40,9 +43,37 @@ func ParseQueryString(queryVals *url.Values) *map[string]interface{} {
 	return &finalQueryVals
 }
 
+// TODO better more standardized error handling
+func ReturnWithError(w http.ResponseWriter, statusCode int, status string, errorMessage string) {
+	errBody := models.HttpError{
+		ErrorCode:		status,
+		ErrorMessage:	errorMessage,
+	}
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(errBody)
+}
+
+func ReturnWithErrorLong(w http.ResponseWriter, err models.HTTPErrorLong) {
+	w.WriteHeader(err.StatusCode)
+	json.NewEncoder(w).Encode(err.Error)
+}
+
+func ReturnSuccess(w http.ResponseWriter, body interface{}, statusCode int) {
+	if body != nil {
+		json.NewEncoder(w).Encode(body)
+	}
+	w.WriteHeader(statusCode)
+}
+
+
 const (
 	BadRequestMessage = "Bad request"
+	InternalServerErrorMessage = "Server error"
 )
+
+func NotFoundErrorString(objectName string, id interface{}) string {
+	return fmt.Sprintf("%s with id %s not found", objectName, id)
+}
 
 const (
 	InfoLog = "INFO: "

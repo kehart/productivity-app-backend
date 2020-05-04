@@ -27,7 +27,6 @@ const (
 	Excited 	Feeling = "excited"
 )
 
-
 func (f Feeling) isValid() bool {
 	switch f {
 	case Sad, Happy, Tired, Anxious, Refreshed, Excited:
@@ -35,7 +34,6 @@ func (f Feeling) isValid() bool {
 	}
 	return false
 }
-
 
 // Component of ever concrete event type
 type BaseEvent struct {

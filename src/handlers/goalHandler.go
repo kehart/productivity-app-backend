@@ -9,6 +9,7 @@ import (
 	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -31,41 +32,49 @@ type GoalHandler struct {
 
 // Handles POST /goals
 func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: createGoal called")
+	log.Print(utils.InfoLog + "GoalHandler:CreateGoal called")
 
 	// Read request
 	var newGoal models.Goal
 
 	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
-		errBody := utils.HttpError{
+		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
 			ErrorMessage:	"Bad request",
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errBody)
+		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
 	json.Unmarshal(reqBody, &newGoal)
+
+	// Validate Syntax
 	_, genErr = valid.ValidateStruct(&newGoal) ; if genErr != nil {
 		fmt.Println(genErr)
-		errBody := utils.HttpError{
+		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
 			ErrorMessage:	genErr,
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errBody)
+		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
-	err := models.ValidateGoal(&newGoal); if err != nil {
+
+	// Validate Semantics
+	err := newGoal.Validate(); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
+		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
 	_, err = gh.GoalManager.CreateGoal(&newGoal); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
+		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
@@ -76,17 +85,19 @@ func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 
 // Uses req body and id from path to read a single goal
 func (gh GoalHandler) GetSingleGoal(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: getSingleGoal called")
+	log.Print(utils.InfoLog + "GoalHandler:GetSingleGoal called")
 
 	goalID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(goalID);  if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
+		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 	goal, err := gh.GoalManager.GetSingleGoal(objId); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
+		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 	json.NewEncoder(w).Encode(goal)
@@ -95,7 +106,7 @@ func (gh GoalHandler) GetSingleGoal(w http.ResponseWriter, r *http.Request) {
 
 // Returns list of all goals in DB // TODO change this to all ACTIVE goals
 func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: getGoals called")
+	log.Print(utils.InfoLog + "GoalHandler:GetGoals called")
 
 	// Parse query string
 	queryVals := r.URL.Query() // returns map[string][]string
@@ -103,6 +114,7 @@ func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
 	results, err := gh.GoalManager.GetGoals(&queryVals); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
+		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 	json.NewEncoder(w).Encode(results)
@@ -115,18 +127,20 @@ func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
 
 // Hard-delete (all else should be update)
 func (gh GoalHandler) DeleteGoal(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: deleteGoal called")
+	log.Print(utils.InfoLog + "GoalHandler:DeleteGoal called")
 
 	goalID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(goalID);  if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
+		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
 	err = gh.GoalManager.DeleteGoal(objId); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
+		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 

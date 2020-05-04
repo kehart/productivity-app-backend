@@ -3,6 +3,7 @@ package managers
 import (
 	"fmt"
 	"github.com/productivity-app-backend/src/interfaces"
+	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
@@ -13,17 +14,18 @@ type EventManagerImpl struct {
 	Store 	interfaces.Store
 }
 
-func (em EventManagerImpl) CreateEvent(event *interfaces.IEvent) (*interfaces.IEvent, *utils.HTTPErrorLong){
+func (em EventManagerImpl) CreateEvent(event *interfaces.IEvent) (*interfaces.IEvent, *models.HTTPErrorLong){
 	fmt.Println("LOG: Manager.InsertEvent called")
 
 	// Validate user being referenced exists
 	userId := (*event).GetUnderlyingEvent().UserId
-	_, err := em.Store.FindById(userId, utils.UserCollection); if err != nil {
-		errBody := utils.HttpError{
+	var user models.User
+	err := em.Store.FindById2(userId, utils.UserCollection, &user); if err != nil {
+		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	"User with id user_id not found", // TODO
 		}
-		fullErr := utils.HTTPErrorLong{
+		fullErr := models.HTTPErrorLong{
 			Error:      errBody,
 			StatusCode: http.StatusNotFound,
 		}
@@ -32,11 +34,11 @@ func (em EventManagerImpl) CreateEvent(event *interfaces.IEvent) (*interfaces.IE
 
 	// Insert user into DB
 	errLong := em.Store.Create(event, utils.EventCollection); if errLong != nil {
-		errBody := utils.HttpError{
+		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",
 		}
-		fullErr := utils.HTTPErrorLong{
+		fullErr := models.HTTPErrorLong{
 			Error:      errBody,
 			StatusCode: http.StatusInternalServerError,
 		}
@@ -45,45 +47,46 @@ func (em EventManagerImpl) CreateEvent(event *interfaces.IEvent) (*interfaces.IE
 	return event, nil
 }
 
-func (em EventManagerImpl) GetEvents(queryVals *url.Values) (*[]interfaces.IEvent, *utils.HTTPErrorLong) {
+func (em EventManagerImpl) GetEvents(queryVals *url.Values) (*[]interfaces.IEvent, *models.HTTPErrorLong) {
 	fmt.Println("LOG: EventManager.GetEvents called")
 
-	var results interface{} // change
+	var results []interfaces.IEvent // change
 	var err interface{} // change
 	if queryVals != nil {
 		finalQueryVals := utils.ParseQueryString(queryVals)
-		results, err = em.Store.FindAll(utils.EventCollection, finalQueryVals)
+		err = em.Store.FindAll2(utils.EventCollection, &results, finalQueryVals)
 	} else {
-		results, err = em.Store.FindAll(utils.EventCollection)
+		err = em.Store.FindAll2(utils.EventCollection, &results)
 	}
 
 	if err != nil {
-		errBody := utils.HttpError{
+		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage: 	"Server error",
 		}
-		fullErr := utils.HTTPErrorLong{
+		fullErr := models.HTTPErrorLong{
 			Error:      errBody,
 			StatusCode: http.StatusInternalServerError,
 		}
 		return nil, &fullErr
 	}
-	return results.(*[]interfaces.IEvent), nil
+	return &results, nil
 }
 
-func (em EventManagerImpl) GetSingleEvent(objId primitive.ObjectID) (*interfaces.IEvent, *utils.HTTPErrorLong) {
+func (em EventManagerImpl) GetSingleEvent(objId primitive.ObjectID) (*interfaces.IEvent, *models.HTTPErrorLong) {
 	fmt.Println("LOG: EventManager.GetSingleEvent called")
 
-	event, err := em.Store.FindById(objId, utils.EventCollection); if err != nil {
-		errBody := utils.HttpError{
+	var event interfaces.IEvent
+	err := em.Store.FindById2(objId, utils.EventCollection, &event); if err != nil {
+		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusNotFound),
 			ErrorMessage: 	fmt.Sprintf("Event with id %s not found", objId.String()),
 		}
-		fullErr := utils.HTTPErrorLong{
+		fullErr := models.HTTPErrorLong{
 			Error:      errBody,
 			StatusCode: http.StatusNotFound,
 		}
 		return nil, &fullErr
 	}
-	return event.(*interfaces.IEvent), nil
+	return &event, nil
 }

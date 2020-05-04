@@ -32,8 +32,13 @@ func (mdb MongoDb) FindById(id primitive.ObjectID, collectionName string) (inter
 	return &obj, err
 }
 
-func (mdb MongoDb) FindAll(collectionName string, query ...*map[string]interface{}) (interface{}, error) {
-	var objs interface{}
+func (mdb MongoDb) FindById2(id primitive.ObjectID, collectionName string, dest interface{}) error {
+	err := mdb.Session.DB(mdb.DbName).C(collectionName).FindId(id).One(dest)
+	return err
+}
+
+func (mdb MongoDb) FindAll(collectionName string, query ...*map[string]interface{}) ([]interface{}, error) {
+	var objs []interface{}
 	var err error
 	if len(query) > 0 {
 		err = mdb.Session.DB(mdb.DbName).C(collectionName).Find(query[0]).All(&objs)
@@ -43,9 +48,24 @@ func (mdb MongoDb) FindAll(collectionName string, query ...*map[string]interface
 	return objs, err
 }
 
+func (mdb MongoDb) FindAll2(collectionName string, dest interface{}, query ...*map[string]interface{}) error {
+	var err error
+	if len(query) > 0 {
+		err = mdb.Session.DB(mdb.DbName).C(collectionName).Find(query[0]).All(dest)
+	} else{
+		err = mdb.Session.DB(mdb.DbName).C(collectionName).Find(nil).All(dest)
+	}
+	return  err
+}
+
 func (mdb MongoDb) Update(id primitive.ObjectID, obj interface{}, collectionName string) (interface{}, error) {
 	err := mdb.Session.DB(mdb.DbName).C(collectionName).UpdateId(id, obj)
 	return obj, err
+}
+
+func (mdb MongoDb) Update2(id primitive.ObjectID, obj interface{}, collectionName string) error {
+	err := mdb.Session.DB(mdb.DbName).C(collectionName).UpdateId(id, obj)
+	return err
 }
 
 func (mdb MongoDb) Delete(id primitive.ObjectID, collectionName string) error {

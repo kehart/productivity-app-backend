@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"github.com/productivity-app-backend/src/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 )
@@ -30,23 +29,23 @@ type Goal struct {
 
 
 // TODO change to have this as a receiver?
-func ValidateGoal(goal *Goal) *utils.HTTPErrorLong {
-	if !goal.GoalCategory.isValid(goal.GoalType) {
-		errBody := utils.HttpError{
+func (g *Goal) Validate() *HTTPErrorLong {
+	if !g.GoalCategory.isValid(g.GoalType) {
+		errBody := HttpError{
 			ErrorCode:    http.StatusText(http.StatusBadRequest),
 			ErrorMessage: "Error, goal_category and goal_name should be a valid pair",
 		}
-		fullErr := utils.HTTPErrorLong{
+		fullErr := HTTPErrorLong{
 			Error:      errBody,
 			StatusCode: http.StatusBadRequest,
 		}
 		return &fullErr
-	} else if !goal.GoalType.isValid(goal.TargetValue) {
-		errBody := utils.HttpError{
+	} else if !g.GoalType.isValid(g.TargetValue) {
+		errBody := HttpError{
 			ErrorCode:    http.StatusText(http.StatusBadRequest),
 			ErrorMessage: "Error, the type of target_value does not match goal_name",
 		}
-		fullErr := utils.HTTPErrorLong{
+		fullErr := HTTPErrorLong{
 			Error:      errBody,
 			StatusCode: http.StatusBadRequest,
 		}
@@ -57,8 +56,8 @@ func ValidateGoal(goal *Goal) *utils.HTTPErrorLong {
 
 
 // Validate goal type with respect to goal category
-func (gc GoalCategory) isValid(gt GoalType) bool {
-	switch gc {
+func (gc *GoalCategory) isValid(gt GoalType) bool {
+	switch *gc {
 	case Sleep:
 		if gt == HoursSlept {
 			return true
@@ -69,8 +68,8 @@ func (gc GoalCategory) isValid(gt GoalType) bool {
 }
 
 // Validate target value with respect to goal type
-func (gt GoalType) isValid(target interface{}) bool {
-	switch gt {
+func (gt *GoalType) isValid(target interface{}) bool {
+	switch *gt {
 	case HoursSlept:
 		tType := fmt.Sprintf("%T", target)
 		if tType =="int" || tType == "float64" {

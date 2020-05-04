@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/interfaces"
+	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"io/ioutil"
 	"net/http"
@@ -25,7 +26,7 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 	var eventMap map[string]interface{}
 
 	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
-		errBody := utils.HttpError{
+		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
 			ErrorMessage:	"Bad request", // TODO
 		}
@@ -37,7 +38,7 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 
 	// Custom Unmarshalling to Specific Event Object
 	event, err := interfaces.NewEvent(eventMap); if err != nil {
-		errBody := utils.HttpError{
+		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusBadRequest),
 			ErrorMessage:	err, // TODO
 		}
@@ -48,7 +49,7 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 
 	// Validate Event Object
 	err = event.Validate(); if err != nil {
-		errBody := utils.HttpError{
+		errBody := models.HttpError{
 			ErrorCode:		http.StatusText(http.StatusInternalServerError),
 			ErrorMessage:	err, // TODO
 		}
@@ -59,17 +60,13 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 
 	// Insert the object
 	createdEvent, longErr := eh.EventManager.CreateEvent(&event); if longErr != nil {
-		w.WriteHeader(longErr.StatusCode)
-		json.NewEncoder(w).Encode(longErr.Error)
+		//w.WriteHeader(longErr.StatusCode)
+		//json.NewEncoder(w).Encode(longErr.Error)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	response := utils.HTTPResponseObject{
-		Meta: 	nil,
-		Data:	createdEvent,
-	}
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(createdEvent)
 }
 //
 //func (sh EventHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +96,7 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 //	v := govalidator.New(opts)
 //	e := v.ValidateJSON(); if len(e) > 0 {
 //		validationError := map[string]interface{}{"validationError": e}
-//		errBody := utils.HttpError{
+//		errBody := models.HttpError{
 //			ErrorCode:		http.StatusText(http.StatusBadRequest),
 //			ErrorMessage:	validationError,
 //		}
@@ -133,8 +130,8 @@ func (eh EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(queryVals)
 	results, err := eh.EventManager.GetEvents(queryVals); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		//w.WriteHeader(err.StatusCode)
+		//json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 	json.NewEncoder(w).Encode(results)
@@ -146,14 +143,14 @@ func (eh EventHandler) GetSingleEvent(w http.ResponseWriter, r *http.Request) {
 
 	eventID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(eventID);  if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		//w.WriteHeader(err.StatusCode)
+		//json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 
 	event, err := eh.EventManager.GetSingleEvent(objId); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		//w.WriteHeader(err.StatusCode)
+		//json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 	json.NewEncoder(w).Encode(event)

@@ -12,14 +12,6 @@ import (
 	"net/http"
 )
 
-/*
-A module for handling HTTP requests to the User API. Supports:
-- Create
-- Read Single and Read All
-- Update
-- Delete
- */
-
 type UserHandler struct {
 	UserManager interfaces.IUserManager
 }
@@ -31,37 +23,25 @@ func (uh UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var newUser models.User
 
 	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	utils.BadRequestMessage,
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errBody)
+		utils.ReturnWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), genErr.Error())
 		log.Println(utils.ErrorLog + "Unable to read request body")
 		return
 	}
 
 	json.Unmarshal(reqBody, &newUser)
 	_, genErr = valid.ValidateStruct(&newUser) ; if genErr != nil {
-			errBody := utils.HttpError{
-				ErrorCode:		http.StatusText(http.StatusBadRequest),
-				ErrorMessage:	genErr,
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(errBody)
-			log.Println(utils.ErrorLog + "Request body data invalid")
-			return
+		utils.ReturnWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), genErr.Error())
+		log.Println(utils.ErrorLog + "Request body data invalid")
+		return
 	}
 	err := models.ValidateUser(&newUser); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Request body data invalid") // TODO ??
 		return
 	}
 
 	err = uh.UserManager.CreateUser(&newUser); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
@@ -77,8 +57,7 @@ func (uh UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 	var results *[]models.User
 	results, err := uh.UserManager.GetUsers(); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
@@ -92,15 +71,13 @@ func (uh UserHandler) GetSingleUser(w http.ResponseWriter, r *http.Request) {
 
 	userID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(userID); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
 	user, errLong := uh.UserManager.GetSingleUser(objId); if errLong != nil {
-		w.WriteHeader(errLong.StatusCode)
-		json.NewEncoder(w).Encode(errLong.Error)
+		utils.ReturnWithErrorLong(w, *errLong)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
@@ -116,20 +93,14 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Extract and format id from URL
 	userId := mux.Vars(r)["id"]
 	objId, errLong := utils.FormatObjectId(userId); if errLong != nil {
-		w.WriteHeader(errLong.StatusCode)
-		json.NewEncoder(w).Encode(errLong.Error)
+		utils.ReturnWithErrorLong(w, *errLong)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
 	var updatesToApply models.User
 	reqBody, err := ioutil.ReadAll(r.Body); if err != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage: 	"Invalid syntax",
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errBody)
+		utils.ReturnWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid syntax")
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
@@ -137,25 +108,18 @@ func (uh UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Validate fields in JSON object
 	_, genErr := valid.ValidateStruct(&updatesToApply) ; if genErr != nil {
-		errBody := utils.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	genErr,
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errBody)
+		utils.ReturnWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), genErr.Error())
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
 	updatedUser, errLong := uh.UserManager.UpdateUser(objId, &updatesToApply); if errLong != nil {
-		w.WriteHeader(errLong.StatusCode)
-		json.NewEncoder(w).Encode(errLong.Error)
+		utils.ReturnWithErrorLong(w, *errLong)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
-	json.NewEncoder(w).Encode(updatedUser)
-	w.WriteHeader(http.StatusOK)
+	utils.ReturnSuccess(w, updatedUser, http.StatusOK)
 }
 
 // Handles DELETE /users/{id}
@@ -178,3 +142,9 @@ func (uh UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+/*
+Todos:
+-login
+-validate JWT
+ */
