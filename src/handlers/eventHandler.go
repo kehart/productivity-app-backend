@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/interfaces"
-	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -21,47 +21,31 @@ type EventHandler struct {
 
 
 func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: createEvent2 called")
+	log.Print(utils.InfoLog + "EventManager:CreateEvent2 called")
 
 	var eventMap map[string]interface{}
 
 	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	"Bad request", // TODO
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errBody)
+		utils.ReturnWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), genErr.Error())
 		return
 	}
 	json.Unmarshal(reqBody, &eventMap)
 
 	// Custom Unmarshalling to Specific Event Object
 	event, err := interfaces.NewEvent(eventMap); if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	err, // TODO
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errBody)
+		utils.ReturnWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), err.Error())
 		return
 	}
 
 	// Validate Event Object
 	err = event.Validate(); if err != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusInternalServerError),
-			ErrorMessage:	err, // TODO
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errBody)
+		utils.ReturnWithError(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 
 	// Insert the object
 	createdEvent, longErr := eh.EventManager.CreateEvent(&event); if longErr != nil {
-		//w.WriteHeader(longErr.StatusCode)
-		//json.NewEncoder(w).Encode(longErr.Error)
+		utils.ReturnWithErrorLong(w, *longErr)
 		return
 	}
 
@@ -116,7 +100,7 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 
 // Use cases: get all events for a certain type (where type will be a query value)
 func (eh EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: GetEvents called")
+	log.Print(utils.InfoLog + "EventManager:GetEvents called")
 
 	// Parse query string
 	//queryVals := r.URL.Query() // returns map[string][]string
@@ -139,18 +123,17 @@ func (eh EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (eh EventHandler) GetSingleEvent(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("LOG: GetSingleEvent called")
+	log.Print(utils.InfoLog + "EventManager:GetSingleEvent called")
 
 	eventID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(eventID);  if err != nil {
-		//w.WriteHeader(err.StatusCode)
-		//json.NewEncoder(w).Encode(err.Error)
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 
 	event, err := eh.EventManager.GetSingleEvent(objId); if err != nil {
-		//w.WriteHeader(err.StatusCode)
-		//json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		return
 	}
 	json.NewEncoder(w).Encode(event)

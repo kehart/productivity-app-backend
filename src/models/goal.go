@@ -28,32 +28,16 @@ type Goal struct {
 }
 
 
-// TODO change to have this as a receiver?
 func (g *Goal) Validate() *HTTPErrorLong {
 	if !g.GoalCategory.isValid(g.GoalType) {
-		errBody := HttpError{
-			ErrorCode:    http.StatusText(http.StatusBadRequest),
-			ErrorMessage: "Error, goal_category and goal_name should be a valid pair",
-		}
-		fullErr := HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusBadRequest,
-		}
+		fullErr := NewHTTPErrorLong(http.StatusText(http.StatusBadRequest), "Error, goal_category and goal_name should be a valid pair", http.StatusBadRequest)
 		return &fullErr
 	} else if !g.GoalType.isValid(g.TargetValue) {
-		errBody := HttpError{
-			ErrorCode:    http.StatusText(http.StatusBadRequest),
-			ErrorMessage: "Error, the type of target_value does not match goal_name",
-		}
-		fullErr := HTTPErrorLong{
-			Error:      errBody,
-			StatusCode: http.StatusBadRequest,
-		}
+		fullErr := NewHTTPErrorLong(http.StatusText(http.StatusBadRequest), "Error, the type of target_value does not match goal_name", http.StatusBadRequest)
 		return &fullErr
 	}
 	return nil
 }
-
 
 // Validate goal type with respect to goal category
 func (gc *GoalCategory) isValid(gt GoalType) bool {

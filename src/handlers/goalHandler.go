@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	valid "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/interfaces"
@@ -38,12 +37,7 @@ func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 	var newGoal models.Goal
 
 	reqBody, genErr := ioutil.ReadAll(r.Body); if genErr != nil {
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	"Bad request",
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errBody)
+		utils.ReturnWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), genErr.Error())
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
@@ -52,28 +46,20 @@ func (gh GoalHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 
 	// Validate Syntax
 	_, genErr = valid.ValidateStruct(&newGoal) ; if genErr != nil {
-		fmt.Println(genErr)
-		errBody := models.HttpError{
-			ErrorCode:		http.StatusText(http.StatusBadRequest),
-			ErrorMessage:	genErr,
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errBody)
+		utils.ReturnWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), genErr.Error())
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
 	// Validate Semantics
 	err := newGoal.Validate(); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
 	_, err = gh.GoalManager.CreateGoal(&newGoal); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
@@ -89,14 +75,12 @@ func (gh GoalHandler) GetSingleGoal(w http.ResponseWriter, r *http.Request) {
 
 	goalID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(goalID);  if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 	goal, err := gh.GoalManager.GetSingleGoal(objId); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
@@ -112,8 +96,7 @@ func (gh GoalHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
 	queryVals := r.URL.Query() // returns map[string][]string
 
 	results, err := gh.GoalManager.GetGoals(&queryVals); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
@@ -131,15 +114,13 @@ func (gh GoalHandler) DeleteGoal(w http.ResponseWriter, r *http.Request) {
 
 	goalID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(goalID);  if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
 
 	err = gh.GoalManager.DeleteGoal(objId); if err != nil {
-		w.WriteHeader(err.StatusCode)
-		json.NewEncoder(w).Encode(err.Error)
+		utils.ReturnWithErrorLong(w, *err)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return
 	}
