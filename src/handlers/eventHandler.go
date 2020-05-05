@@ -10,8 +10,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-
-	//valid "github.com/asaskevich/govalidator"
 )
 
 
@@ -38,6 +36,7 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate Event Object
+	// TODO this does not do anything at the moment
 	err = event.Validate(); if err != nil {
 		utils.ReturnWithError(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
@@ -52,51 +51,6 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdEvent)
 }
-//
-//func (sh EventHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
-//	fmt.Println("LOG: createUser called")
-//
-//	var newSleepEvent utils.SleepEvent
-//
-//	// Validate and unmarshal to newSleepEvent
-//	rules := govalidator.MapData{
-//		"user_id": []string{"required"},
-//		"sleep_time": []string{"required"},
-//		"wakeup_time": []string{"required"},
-//		"wakeup_feeling": []string{},
-//		"sleep_feeling": []string{},
-//		"quality_of_sleep": []string{},
-//		"alarm_used": []string{},
-//		"own_bed": []string{},
-//	}
-//	opts := govalidator.Options{
-//		Data:            &newSleepEvent,
-//		Request:         r,
-//		RequiredDefault: true, // idk what this does
-//		Rules:           rules,
-//	}
-//
-//	// got here
-//	v := govalidator.New(opts)
-//	e := v.ValidateJSON(); if len(e) > 0 {
-//		validationError := map[string]interface{}{"validationError": e}
-//		errBody := models.HttpError{
-//			ErrorCode:		http.StatusText(http.StatusBadRequest),
-//			ErrorMessage:	validationError,
-//		}
-//		w.WriteHeader(http.StatusBadRequest)
-//		json.NewEncoder(w).Encode(errBody)
-//		return
-//	}
-//
-//	err := sh.EventManager.InsertEvent(&newSleepEvent); if err != nil {
-//		w.WriteHeader(err.StatusCode)
-//		json.NewEncoder(w).Encode(err.Error)
-//		return
-//	}
-//	w.WriteHeader(http.StatusCreated)
-//	json.NewEncoder(w).Encode(newSleepEvent)
-//}
 
 // Use cases: get all events for a certain type (where type will be a query value)
 func (eh EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {

@@ -46,12 +46,18 @@ type SleepEvent struct {
 	BaseEvent 		BaseEvent
 	SleepTime 		time.Time	`json:"sleep_time" bson:"sleep_time" valid:"rfc3339"` // maybe change to rfc3339WithoutZone
 	WakeupTime 		time.Time	`json:"wakeup_time" bson:"wakeup_time" valid:"rfc3339"`
-	WakeupFeeling 	Feeling		`json:"wakeup_feeling" bson:"wakeup_feeling" valid:"type(string), optional"` // custom; one of enum
-	SleepFeeling 	Feeling		`json:"sleep_feeling" bson:"sleep_feeling" valid:"type(string), optional"` // custom: one of enum
-	QualityOfSleep 	int 		`json:"quality_of_sleep" bson:"quality_of_sleep" valid:"type(itn), optional"` // [1, 10]
-	AlarmUsed 		bool		`json:"alarm_used" bson:"alarm_used" valid:"type(bool), optional"`
-	OwnBed 			bool		`json:"own_bed" bson:"own_bed" valid:"type(bool), optional"`
+	/* Below are OPTIONAL fields */
+	WakeupFeeling 	string		`json:"wakeup_feeling" bson:"wakeup_feeling" valid:"type(string), optional"` // custom; one of enum
+	SleepFeeling 	string		`json:"sleep_feeling" bson:"sleep_feeling" valid:"type(string), optional"` // custom: one of enum
+	QualityOfSleep 	int 		`json:"quality_of_sleep" bson:"quality_of_sleep" valid:"type(int), optional"` // [1, 10]
+	AlarmUsed 		int		`json:"alarm_used" bson:"alarm_used" valid:"type(int), optional"`
+	OwnBed 			int		`json:"own_bed" bson:"own_bed" valid:"type(int), optional"`
 }
+
+/*
+Valid Quality of Sleep is in [1,10], -1 indicates no response
+AlarmUsed and OwnBed use [0, 1] as true/false, -1 indicates no response
+*/
 
 /*
 IEvent Implementation
@@ -110,33 +116,44 @@ func NewSleepEvent(json map[string]interface{}) (*SleepEvent, error) {
 	se.BaseEvent.Id = primitive.NewObjectID()
 
 	// Optional Fields
-	// TODO fix serialization when values not present
 	wf := json["wakeup_feeling"]; if wf != nil {
-		se.WakeupFeeling = wf.(Feeling)
+		se.WakeupFeeling = wf.(string)
 	}
 	sf := json["sleep_feeling"]; if sf != nil {
-		se.SleepFeeling = sf.(Feeling)
+		se.SleepFeeling = sf.(string)
 	}
 	qos := json["quality_of_sleep"]; if qos != nil {
 		qosInt, e := strconv.Atoi(qos.(string)); if e != nil {
 			err := errors.New("error parsing quality_of_sleep")
 			return nil, err
 		}
+		if !( (1 <= qosInt && qosInt <= 10) || qosInt == -1) {
+			err := errors.New("invalid quality_of_sleep value")
+			return nil, err
+		}
 		se.QualityOfSleep = qosInt
 	}
 	au := json["alarm_used"]; if au != nil {
-		auBool, e := strconv.ParseBool(au.(string)); if e != nil {
+		auInt, e := strconv.Atoi(au.(string)); if e != nil {
 			err := errors.New("error parsing alarm_used")
 			return nil, err
 		}
-		se.AlarmUsed = auBool
+		if !(-1 <= auInt && auInt <= 1) {
+			err := errors.New("invalid alarm_used value")
+			return nil, err
+		}
+		se.AlarmUsed = auInt
 	}
 	ob := json["own_bed"]; if ob != nil {
-		obBool, e := strconv.ParseBool(ob.(string)); if e != nil {
+		obInt, e := strconv.Atoi(ob.(string)); if e != nil {
 			err := errors.New("error parsing own_bed")
 			return nil, err
 		}
-		se.OwnBed = obBool
+		if !(-1 <= obInt && obInt <= 1) {
+			err := errors.New("invalid own_bed value")
+			return nil, err
+		}
+		se.OwnBed = obInt
 	}
 	return &se, nil
 }
