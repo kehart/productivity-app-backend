@@ -38,7 +38,7 @@ func (em EventManagerImpl) CreateEvent(event *interfaces.IEvent) (*interfaces.IE
 func (em EventManagerImpl) GetEvents(queryVals *url.Values) (*[]interfaces.IEvent, *models.HTTPErrorLong) {
 	log.Print(utils.InfoLog + "EventManager:GetEvents called")
 
-	var results []interfaces.IEvent
+	var results []map[string]interface{}
 	var err interface{} // change
 	if queryVals != nil {
 		finalQueryVals := utils.ParseQueryString(queryVals)
@@ -47,12 +47,23 @@ func (em EventManagerImpl) GetEvents(queryVals *url.Values) (*[]interfaces.IEven
 		err = em.Store.FindAll(utils.EventCollection, &results)
 	}
 
+	// TODO probably want to provide parallelism here
+	var events []interfaces.IEvent
+	for _, e := range results {
+		event, err := interfaces.NewEventCreated(e); if err != nil {
+			fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
+			log.Println(utils.ErrorLog + err.Error()) // TODO ??
+			return nil, &fullErr
+		}
+		events = append(events, event)
+	}
+
 	if err != nil {
 		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return nil, &fullErr
 	}
-	return &results, nil
+	return &events, nil
 }
 
 func (em EventManagerImpl) GetSingleEvent(objId primitive.ObjectID) (*interfaces.IEvent, *models.HTTPErrorLong) {

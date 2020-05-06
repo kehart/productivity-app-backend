@@ -44,7 +44,7 @@ type BaseEvent struct {
 
 // Implements IEvent
 type SleepEvent struct {
-	BaseEvent 		BaseEvent
+	BaseEvent 		BaseEvent	`json:"base_event" bson:"base_event"`
 	SleepTime 		time.Time	`json:"sleep_time" bson:"sleep_time" valid:"rfc3339"` // maybe change to rfc3339WithoutZone
 	WakeupTime 		time.Time	`json:"wakeup_time" bson:"wakeup_time" valid:"rfc3339"`
 	/* Below are OPTIONAL fields */
@@ -171,6 +171,63 @@ func NewSleepEvent(json map[string]interface{}) (*SleepEvent, error) {
 	return &se, nil
 }
 
+
+func NewSleepEventCreated(json map[string]interface{}) (*SleepEvent, error) {
+	var se SleepEvent
+	baseEvent := json["base_event"].(map[string]interface{})
+
+	uid := baseEvent["user_id"]; if uid != nil {
+		se.BaseEvent.UserId.UnmarshalJSON(uid.([]byte))
+	} else {
+		err := errors.New("no user_id given")
+		return nil, err
+	}
+	eType := baseEvent["type"]; if eType != nil {
+		se.BaseEvent.Type = eType.(string)
+	} else {
+		err := errors.New("no type given")
+		return nil, err
+	}
+	id := baseEvent["_id"]; if id != nil {
+		se.BaseEvent.Id.UnmarshalJSON(id.([]byte))//
+	} else {
+		err := errors.New("no id given")
+		return nil, err
+	}
+
+	st := json["sleep_time"]; if st != nil {
+		se.SleepTime = st.(time.Time)
+	} else {
+		err := errors.New("no sleep_time given")
+		return nil, err
+	}
+
+	wt := json["wakeup_time"]; if wt != nil {
+		se.WakeupTime = wt.(time.Time)
+	} else {
+		err := errors.New("no wakeup_time given")
+		return nil, err
+	}
+	se.BaseEvent.Id = primitive.NewObjectID()
+
+	// Optional Fields
+	wf := json["wakeup_feeling"]; if wf != nil {
+		se.WakeupFeeling = wf.(string)
+	}
+	sf := json["sleep_feeling"]; if sf != nil {
+		se.SleepFeeling = sf.(string)
+	}
+	qos := json["quality_of_sleep"]; if qos != nil {
+		se.QualityOfSleep = qos.(int)
+	}
+	au := json["alarm_used"]; if au != nil {
+		se.AlarmUsed = au.(int)
+	}
+	ob := json["own_bed"]; if ob != nil {
+		se.OwnBed = ob.(int)
+	}
+	return &se, nil
+}
 
 // Implements IEvent
 type DietEvent struct {

@@ -29,3 +29,17 @@ func NewEvent(json map[string]interface{}) (IEvent, error) {
 	}
 }
 
+func NewEventCreated(json map[string]interface{}) (IEvent, error) {
+	baseEvent := json["base_event"].(map[string]interface{})
+	eventType := baseEvent["type"]
+	switch eventType{
+	case "sleep":
+		return models.NewSleepEventCreated(json)
+	case "diet:":
+		return nil, nil // TODO
+	default:
+		return nil, errors.New("error type not defined")
+	}
+}
+
+
