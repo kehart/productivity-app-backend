@@ -58,7 +58,7 @@ func main() {
 	router.HandleFunc("/goals", gh.GetGoals).Methods("GET")
 
 	// Event Routing
-	router.HandleFunc("/events", eh.CreateEvent2).Methods("POST")
+	router.HandleFunc("/events", eh.CreateEvent).Methods("POST")
 	router.HandleFunc("/events", eh.GetEvents).Methods("GET")
 	router.HandleFunc("/events/{id}", eh.GetSingleEvent).Methods("GET")
 

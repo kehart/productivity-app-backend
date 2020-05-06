@@ -39,6 +39,7 @@ func (f Feeling) isValid() bool {
 type BaseEvent struct {
 	Id 		primitive.ObjectID  `json:"id" bson:"_id"`
 	UserId 	primitive.ObjectID  `json:"user_id" bson:"user_id" valid:"type(mongoid)"`
+	Type 	string 				`json:"type" bson:"type"`
 }
 
 // Implements IEvent
@@ -69,6 +70,18 @@ func (se SleepEvent) GetUnderlyingEvent() BaseEvent {
 
 // SleepEvent implements IEvent
 func (se SleepEvent) Validate() error {
+	if !( (1 <= se.QualityOfSleep && se.QualityOfSleep <= 10) || se.QualityOfSleep == -1) {
+		err := errors.New("invalid quality_of_sleep value")
+		return err
+	}
+	if !(-1 <= se.AlarmUsed && se.AlarmUsed <= 1) {
+		err := errors.New("invalid alarm_used value")
+		return err
+	}
+	if !(-1 <= se.OwnBed && se.OwnBed <= 1) {
+		err := errors.New("invalid own_bed value")
+		return err
+	}
 	return nil
 }
 
@@ -76,7 +89,7 @@ func (se SleepEvent) Validate() error {
 Custom Constructor
 */
 
-// A failure here means a 400
+
 func NewSleepEvent(json map[string]interface{}) (*SleepEvent, error) {
 	var se SleepEvent
 
@@ -89,6 +102,12 @@ func NewSleepEvent(json map[string]interface{}) (*SleepEvent, error) {
 		se.BaseEvent.UserId = objId
 	} else {
 		err := errors.New("no user_id given")
+		return nil, err
+	}
+	eType := json["type"]; if eType != nil {
+		se.BaseEvent.Type = eType.(string)
+	} else {
+		err := errors.New("no type given")
 		return nil, err
 	}
 
@@ -127,33 +146,27 @@ func NewSleepEvent(json map[string]interface{}) (*SleepEvent, error) {
 			err := errors.New("error parsing quality_of_sleep")
 			return nil, err
 		}
-		if !( (1 <= qosInt && qosInt <= 10) || qosInt == -1) {
-			err := errors.New("invalid quality_of_sleep value")
-			return nil, err
-		}
 		se.QualityOfSleep = qosInt
+	} else {
+		se.QualityOfSleep = -1
 	}
 	au := json["alarm_used"]; if au != nil {
 		auInt, e := strconv.Atoi(au.(string)); if e != nil {
 			err := errors.New("error parsing alarm_used")
 			return nil, err
 		}
-		if !(-1 <= auInt && auInt <= 1) {
-			err := errors.New("invalid alarm_used value")
-			return nil, err
-		}
 		se.AlarmUsed = auInt
+	} else {
+		se.AlarmUsed = -1
 	}
 	ob := json["own_bed"]; if ob != nil {
 		obInt, e := strconv.Atoi(ob.(string)); if e != nil {
 			err := errors.New("error parsing own_bed")
 			return nil, err
 		}
-		if !(-1 <= obInt && obInt <= 1) {
-			err := errors.New("invalid own_bed value")
-			return nil, err
-		}
 		se.OwnBed = obInt
+	} else {
+		se.OwnBed = -1
 	}
 	return &se, nil
 }

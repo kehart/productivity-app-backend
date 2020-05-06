@@ -18,8 +18,8 @@ type EventHandler struct {
 }
 
 
-func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
-	log.Print(utils.InfoLog + "EventManager:CreateEvent2 called")
+func (eh EventHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
+	log.Print(utils.InfoLog + "EventHandler:CreateEvent called")
 
 	var eventMap map[string]interface{}
 
@@ -36,7 +36,6 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate Event Object
-	// TODO this does not do anything at the moment
 	err = event.Validate(); if err != nil {
 		utils.ReturnWithError(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
@@ -54,7 +53,7 @@ func (eh EventHandler) CreateEvent2(w http.ResponseWriter, r *http.Request) {
 
 // Use cases: get all events for a certain type (where type will be a query value)
 func (eh EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
-	log.Print(utils.InfoLog + "EventManager:GetEvents called")
+	log.Print(utils.InfoLog + "EventHandler:GetEvents called")
 
 	// Parse query string
 	//queryVals := r.URL.Query() // returns map[string][]string
@@ -68,8 +67,8 @@ func (eh EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(queryVals)
 	results, err := eh.EventManager.GetEvents(queryVals); if err != nil {
-		//w.WriteHeader(err.StatusCode)
-		//json.NewEncoder(w).Encode(err.Error)
+		w.WriteHeader(err.StatusCode)
+		json.NewEncoder(w).Encode(err.Error)
 		return
 	}
 	json.NewEncoder(w).Encode(results)
@@ -77,7 +76,7 @@ func (eh EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (eh EventHandler) GetSingleEvent(w http.ResponseWriter, r *http.Request) {
-	log.Print(utils.InfoLog + "EventManager:GetSingleEvent called")
+	log.Print(utils.InfoLog + "EventHandler:GetSingleEvent called")
 
 	eventID := mux.Vars(r)["id"]
 	objId, err := utils.FormatObjectId(eventID);  if err != nil {
