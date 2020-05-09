@@ -73,6 +73,7 @@ func (em EventManagerImpl) GetSingleEvent(objId primitive.ObjectID) (*interfaces
 	log.Print(utils.InfoLog + "EventManager:GetSingleEvent called")
 
 	var event map[string]interface{}
+	fmt.Println(objId)
 	err := em.Store.FindById(objId, utils.EventCollection, &event); if err != nil {
 		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusNotFound), utils.NotFoundErrorString("Event", objId.String()), http.StatusNotFound)
 		log.Println(utils.ErrorLog + err.Error()) // TODO ??

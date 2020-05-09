@@ -54,7 +54,6 @@ func NewEventCreated(json map[string]interface{}) (IEvent, error) {
 Custom Constructor
 */
 
-
 func NewSleepEvent(json map[string]interface{}) (*models.SleepEvent, error) {
 	var se models.SleepEvent
 
@@ -174,7 +173,6 @@ func NewSleepEventCreated(bsonMap map[string]interface{}) (*models.SleepEvent, e
 		err := errors.New("no wakeup_time given")
 		return nil, err
 	}
-	se.Id = primitive.NewObjectID()
 
 	// Optional Fields
 	wf := bsonMap["wakeup_feeling"]; if wf != nil {
