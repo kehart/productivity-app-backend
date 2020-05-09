@@ -1,6 +1,7 @@
 package managers
 
 import (
+	"fmt"
 	"github.com/productivity-app-backend/src/interfaces"
 	"github.com/productivity-app-backend/src/models"
 	"github.com/productivity-app-backend/src/utils"
@@ -18,7 +19,7 @@ func (em EventManagerImpl) CreateEvent(event *interfaces.IEvent) (*interfaces.IE
 	log.Print(utils.InfoLog + "EventManager:CreateEvent called")
 
 	// Validate that user being referenced exists
-	userId := (*event).GetUnderlyingEvent().UserId
+	userId := (*event).GetUserId()
 	var user models.User
 	err := em.Store.FindById(userId, utils.UserCollection, &user); if err != nil {
 		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusNotFound), utils.NotFoundErrorString("User", userId.String()), http.StatusNotFound)
@@ -49,7 +50,9 @@ func (em EventManagerImpl) GetEvents(queryVals *url.Values) (*[]interfaces.IEven
 
 	// TODO probably want to provide parallelism here
 	var events []interfaces.IEvent
+	fmt.Println(results)
 	for _, e := range results {
+		fmt.Println(e)
 		event, err := interfaces.NewEventCreated(e); if err != nil {
 			fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 			log.Println(utils.ErrorLog + err.Error()) // TODO ??
@@ -69,11 +72,16 @@ func (em EventManagerImpl) GetEvents(queryVals *url.Values) (*[]interfaces.IEven
 func (em EventManagerImpl) GetSingleEvent(objId primitive.ObjectID) (*interfaces.IEvent, *models.HTTPErrorLong) {
 	log.Print(utils.InfoLog + "EventManager:GetSingleEvent called")
 
-	var event interfaces.IEvent
+	var event map[string]interface{}
 	err := em.Store.FindById(objId, utils.EventCollection, &event); if err != nil {
 		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusNotFound), utils.NotFoundErrorString("Event", objId.String()), http.StatusNotFound)
-		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
+		log.Println(utils.ErrorLog + err.Error()) // TODO ??
 		return nil, &fullErr
 	}
-	return &event, nil
+	specificEvent, err := interfaces.NewEventCreated(event); if err != nil {
+		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
+		log.Println(utils.ErrorLog + err.Error()) // TODO ??
+		return nil, &fullErr
+	}
+	return &specificEvent, nil
 }

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/productivity-app-backend/src/interfaces"
 	"github.com/productivity-app-backend/src/utils"
@@ -55,9 +54,6 @@ func (eh EventHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 func (eh EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 	log.Print(utils.InfoLog + "EventHandler:GetEvents called")
 
-	// Parse query string
-	//queryVals := r.URL.Query() // returns map[string][]string
-	//fmt.Println(queryVals)
 	var queryVals *url.Values // base type *map[string][]string
 	queryValMap := r.URL.Query(); if len(queryValMap) == 0 {
 		queryVals = nil
@@ -65,7 +61,6 @@ func (eh EventHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 		queryVals = &queryValMap
 	}
 
-	fmt.Println(queryVals)
 	results, err := eh.EventManager.GetEvents(queryVals); if err != nil {
 		w.WriteHeader(err.StatusCode)
 		json.NewEncoder(w).Encode(err.Error)
