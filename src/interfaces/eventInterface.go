@@ -25,25 +25,27 @@ type IEvent interface {
 
 // Factory method for creating new IEvents
 func NewEvent(json map[string]interface{}) (IEvent, error) {
+	log.Println(utils.InfoLog + "EventInterface::NewEvent called")
+
 	eventType := json["type"]
 	switch eventType{
 	case "sleep":
 		return NewSleepEvent(json)
-	case "diet:":
-		return nil, nil // TODO
+	case "diet":
+		return NewDietEvent(json)
 	default:
 		return nil, errors.New("error type not defined")
 	}
 }
 
-func NewEventCreated(json map[string]interface{}) (IEvent, error) {
+func NewEventCreated(bson map[string]interface{}) (IEvent, error) {
 	log.Print(utils.InfoLog + "EventInterface::NewEventCreated called")
-	eventType := json["type"]
+	eventType := bson["type"]
 	switch eventType{
 	case "sleep":
-		return NewSleepEventCreated(json)
+		return NewSleepEventCreated(bson)
 	case "diet:":
-		return nil, nil // TODO
+		return NewDietEventCreated(bson)
 	default:
 		return nil, errors.New("error type not defined")
 	}
@@ -55,6 +57,8 @@ Custom Constructor
 */
 
 func NewSleepEvent(json map[string]interface{}) (*models.SleepEvent, error) {
+	log.Println(utils.InfoLog + "EventInterface::NewSleepEvent called")
+
 	var se models.SleepEvent
 
 	// Mandatory fields
@@ -154,7 +158,7 @@ func NewSleepEventCreated(bsonMap map[string]interface{}) (*models.SleepEvent, e
 		return nil, err
 	}
 	id := bsonMap["_id"]; if id != nil {
-		se.Id.UnmarshalJSON(id.([]byte))//
+		se.Id.UnmarshalJSON(id.([]byte))
 	} else {
 		err := errors.New("no id given")
 		return nil, err
@@ -193,4 +197,127 @@ func NewSleepEventCreated(bsonMap map[string]interface{}) (*models.SleepEvent, e
 	return &se, nil
 }
 
+/*
+Custom Constructor
+*/
 
+func NewDietEvent(json map[string]interface{}) (*models.DietEvent, error) {
+	log.Println(utils.InfoLog + "EventInterface::NewDietEvent called")
+
+	var de models.DietEvent
+
+	// Mandatory fields
+	uid := json["user_id"]; if uid != nil {
+		objId, e := primitive.ObjectIDFromHex(uid.(string)); if e != nil {
+			err := errors.New("error parsing user_id string")
+			return nil, err
+		}
+		de.UserId = objId
+	} else {
+		err := errors.New("no user_id given")
+		return nil, err
+	}
+	eType := json["type"]; if eType != nil {
+		de.Type = eType.(string)
+	} else {
+		err := errors.New("no type given")
+		return nil, err
+	}
+
+	st := json["time_eaten"]; if st != nil {
+		t, e := time.Parse(time.RFC3339, st.(string)); if e != nil {
+			err := errors.New("error parsing time_eaten string")
+			return nil, err
+		}
+		de.TimeEaten = t
+	} else {
+		err := errors.New("no time_eaten given")
+		return nil, err
+	}
+	de.Id = primitive.NewObjectID()
+
+	items := json["items"]; if items != nil{
+		foodItems, err := ParseFoodItems(items.([]interface{})); if err != nil {
+			return nil, err
+		} else {
+			de.Items = foodItems
+		}
+	} else {
+		err := errors.New("no items given")
+		return nil, err
+	}
+
+	// Optional Fields
+	wf := json["feeling"]; if wf != nil {
+		de.Feeling = wf.(string)
+	}
+	return &de, nil
+}
+
+
+func NewDietEventCreated(bsonMap map[string]interface{}) (*models.DietEvent, error) {
+	log.Println(utils.InfoLog + "EventInterface::NewDietEventCreated called")
+
+	var de models.DietEvent
+
+	uid := bsonMap["user_id"]; if uid != nil {
+		de.UserId.UnmarshalJSON(uid.([]byte))
+	} else {
+		err := errors.New("no user_id given")
+		return nil, err
+	}
+	eType := bsonMap["type"]; if eType != nil {
+		de.Type = eType.(string)
+	} else {
+		err := errors.New("no type given")
+		return nil, err
+	}
+	id := bsonMap["_id"]; if id != nil {
+		de.Id.UnmarshalJSON(id.([]byte)) //
+	} else {
+		err := errors.New("no id given")
+		return nil, err
+	}
+
+	it := bsonMap["items"]; if it != nil {
+		de.Items = it.([]models.FoodData)
+	} else {
+		err := errors.New("no item given")
+		return nil, err
+	}
+
+	wt := bsonMap["time_eaten"]; if wt != nil {
+		de.TimeEaten = wt.(time.Time)
+	} else {
+		err := errors.New("no time_eaten given")
+		return nil, err
+	}
+
+	// Optional Fields
+	wf := bsonMap["feeling"]; if wf != nil {
+		de.Feeling = wf.(string)
+	}
+	return &de, nil
+}
+
+func ParseFoodItems(items []interface{}) ([]models.FoodData, error) {
+	finalList := []models.FoodData{}
+	for _, e := range items {
+		var item models.FoodData
+		itemMap := e.(map[string]interface{})
+		fi := itemMap["food_item"]; if fi != nil {
+			item.FoodItem = fi.(string)
+		} else {
+			err := errors.New("no food_item given in items")
+			return nil, err
+		}
+		qty := itemMap["quantity"]; if qty != nil {
+			item.Quantity = qty.(string)
+		} else {
+			err := errors.New("no quantity given in items")
+			return nil, err
+		}
+		finalList = append(finalList, item)
+	}
+	return finalList, nil
+}
