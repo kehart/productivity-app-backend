@@ -9,6 +9,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"log"
 	"net/http"
+	"os"
 )
 
 func getSession() *mgo.Session {
@@ -67,5 +68,7 @@ func main() {
 	router.HandleFunc("/events", eh.GetEvents).Methods("GET")
 	router.HandleFunc("/events/{id}", eh.GetSingleEvent).Methods("GET")
 
-	log.Fatal(http.ListenAndServe(":8080", router)) // create server
+	port := os.Getenv("PORT")
+
+	log.Fatal(http.ListenAndServe(":" + port, router)) // create server
 }
