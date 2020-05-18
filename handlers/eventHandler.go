@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/productivity-app-backend/src/interfaces"
-	"github.com/productivity-app-backend/src/utils"
+	"github.com/productivity-app-backend/interfaces"
+	"github.com/productivity-app-backend/utils"
 	"io/ioutil"
 	"log"
 	"net/http"

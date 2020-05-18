@@ -2,8 +2,8 @@ package	managers
 
 import (
 	"errors"
-	"github.com/productivity-app-backend/src/models"
-	"github.com/productivity-app-backend/src/utils"
+	"github.com/productivity-app-backend/models"
+	"github.com/productivity-app-backend/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.mongodb.org/mongo-driver/bson/primitive"

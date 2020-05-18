@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"github.com/productivity-app-backend/src/models"
+	"github.com/productivity-app-backend/models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/url"
 )

@@ -3,9 +3,9 @@ package main
 import (
 	valid "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
-	"github.com/productivity-app-backend/src/handlers"
-	"github.com/productivity-app-backend/src/managers"
-	"github.com/productivity-app-backend/src/utils"
+	"github.com/productivity-app-backend/handlers"
+	"github.com/productivity-app-backend/managers"
+	"github.com/productivity-app-backend/utils"
 	"gopkg.in/mgo.v2"
 	"log"
 	"net/http"

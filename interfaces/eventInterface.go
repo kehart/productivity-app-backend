@@ -2,8 +2,8 @@ package interfaces
 
 import (
 	"errors"
-	"github.com/productivity-app-backend/src/models"
-	"github.com/productivity-app-backend/src/utils"
+	"github.com/productivity-app-backend/models"
+	"github.com/productivity-app-backend/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"strconv"
