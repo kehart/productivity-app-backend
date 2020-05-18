@@ -273,7 +273,7 @@ func NewDietEventCreated(bsonMap map[string]interface{}) (*models.DietEvent, err
 		return nil, err
 	}
 	id := bsonMap["_id"]; if id != nil {
-		de.Id.UnmarshalJSON(id.([]byte)) //
+		de.Id.UnmarshalJSON(id.([]byte))
 	} else {
 		err := errors.New("no id given")
 		return nil, err
