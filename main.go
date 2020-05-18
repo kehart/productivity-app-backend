@@ -45,6 +45,11 @@ func main() {
 
 	router := mux.NewRouter().StrictSlash(true)
 
+	// Test path
+	router.HandleFunc("/", func (w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Test succeeded"))
+	}).Methods("GET")
+
 	// User Routing
 	router.HandleFunc("/users", uh.CreateUser).Methods("POST")
 	router.HandleFunc("/users", uh.GetAllUsers).Methods("GET")
