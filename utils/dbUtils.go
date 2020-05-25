@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 	"fmt"
+
+	//"github.com/productivity-app-backend/models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"gopkg.in/mgo.v2"
 	"log"
@@ -87,7 +89,11 @@ func (mdb MongoDb2) FindById(id primitive.ObjectID, collectionName string, dest 
 	return err
 }
 
-func (mdb MongoDb2) FindAll(collectionName string, dest interface{}, query ...*map[string]interface{}) error {
+func (mdb MongoDb2) FindAll(collectionName string, dest []interface{},
+							decoder func(cur *mongo.Cursor) error,
+							query ...*map[string]interface{}) error {
+
+	// TODO remove dest
 	log.Print(InfoLog + "MongoDb2:FindAll called")
 	var err error
 	var cur *mongo.Cursor
@@ -96,19 +102,16 @@ func (mdb MongoDb2) FindAll(collectionName string, dest interface{}, query ...*m
 	if len(query) > 0 {
 		//err = mdb.Session.Database(mdb.DbName).Collection(collectionName).Find(query[0]).All(dest)
 		cur, err = mdb.Session.Database(mdb.DbName).Collection(collectionName).Find(context.TODO(), query[0], findOptions)
-	//	fmt.Println(cur, err)
 	} else {
 		//err = mdb.Session.Database(mdb.DbName).Collection(collectionName).Find(nil).All(dest)
 		cur, err = mdb.Session.Database(mdb.DbName).Collection(collectionName).Find(context.TODO(), bson.D{}, findOptions)
-	//	fmt.Println(cur, err)
 	}
 
 	if err != nil {
 		return err
 	}
-
-	err = cur.All(context.TODO(), &dest)
-	cur.Close(context.TODO())
+	defer cur.Close(context.TODO())
+	err = decoder(cur)
 	return err
 }
 

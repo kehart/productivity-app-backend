@@ -38,4 +38,3 @@ func ValidateUser(user *User) *HTTPErrorLong {
 	}
 	return nil
 }
-

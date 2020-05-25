@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
@@ -25,6 +26,34 @@ type Goal struct {
 	GoalCategory GoalCategory       `json:"goal_category" bson:"goal_category" valid:"required"` //valid:"type(string)"
 	GoalType     GoalType           `json:"goal_name" bson:"goal_name" valid:"required"` // valid:"type(string)"
 	TargetValue  interface{}        `json:"target_value" bson:"target_value" valid:"required"`
+}
+
+func NewGoal(obj map[string]interface{}) (*Goal, error) {
+	id := obj["_id"]; if id == nil {
+		return nil, errors.New("no id")
+	}
+	uId := obj["user_id"]; if uId == nil {
+		return nil, errors.New("no uId")
+	}
+	gc := obj["goal_category"]; if gc == nil {
+		return nil, errors.New("no goalCateogry")
+	}
+	gt := obj["goal_name"]; if gt == nil {
+		return nil, errors.New("no goalType")
+	}
+
+	fmt.Println("this is gt", gt)
+	tv := obj["target_value"]; if tv == nil {
+		return nil, errors.New("no targetValue")
+	}
+	goal := Goal{
+		ID:           id.(primitive.ObjectID),
+		UserId:       uId.(primitive.ObjectID),
+		GoalCategory: gc.(GoalCategory),
+		GoalType:     gt.(GoalType),
+		TargetValue:  tv,
+	}
+	return &goal, nil
 }
 
 

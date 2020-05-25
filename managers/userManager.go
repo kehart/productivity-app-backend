@@ -1,11 +1,13 @@
 package managers
 
 import (
+	"context"
 	"fmt"
 	"github.com/productivity-app-backend/interfaces"
 	"github.com/productivity-app-backend/models"
 	"github.com/productivity-app-backend/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 )
@@ -33,14 +35,31 @@ func (um UserManagerImpl) CreateUser(newUser *models.User) *models.HTTPErrorLong
 func (um UserManagerImpl ) GetUsers() (*[]models.User, *models.HTTPErrorLong) {
 	log.Print(utils.InfoLog + "UserManager:GetUsers called")
 
-	var results []models.User
-	err := um.Store.FindAll(utils.UserCollection, &results); if err != nil {
+	var bsonUsers []interface{} // remove?
+
+	var users []models.User
+
+	decoder := func (cur *mongo.Cursor) error {
+
+		for cur.Next(context.TODO()) {
+			var user models.User
+			err := cur.Decode(&user); if err != nil {
+				return  err
+			}
+			users = append(users, user)
+		}
+
+		err := cur.Err()
+		return err
+	}
+
+	err := um.Store.FindAll(utils.UserCollection, bsonUsers, decoder); if err != nil {
 		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 		log.Println(utils.ErrorLog + "Insert body here") // TODO ??
 		return nil, &fullErr
 	}
 
-	return &results, nil
+	return &users, nil
 }
 
 func (um UserManagerImpl ) GetSingleUser(objId primitive.ObjectID) (*models.User, *models.HTTPErrorLong) {

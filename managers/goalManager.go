@@ -1,10 +1,12 @@
 package managers
 
 import (
+	"context"
 	"github.com/productivity-app-backend/interfaces"
 	"github.com/productivity-app-backend/models"
 	"github.com/productivity-app-backend/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 	"net/url"
@@ -48,8 +50,24 @@ func (gm GoalManagerImpl) GetGoals(queryVals *url.Values) (*[]models.Goal, *mode
 	log.Print(utils.InfoLog + "GoalManager:GetGoals called")
 
 	finalQueryVals := utils.ParseQueryString(queryVals)
+
 	var goals []models.Goal
-	err := gm.Store.FindAll(utils.GoalCollection, &goals, finalQueryVals) ; if err != nil {
+	decoder := func (cur *mongo.Cursor) error {
+
+		for cur.Next(context.TODO()) {
+			var goal models.Goal
+			err := cur.Decode(&goal); if err != nil {
+				return  err
+			}
+			goals = append(goals, goal)
+		}
+
+		err := cur.Err()
+		return err
+	}
+
+	var bsonGoals []interface{}
+	err := gm.Store.FindAll(utils.GoalCollection, bsonGoals, decoder, finalQueryVals) ; if err != nil {
 		fullErr := models.NewHTTPErrorLong(http.StatusText(http.StatusInternalServerError), utils.InternalServerErrorMessage, http.StatusInternalServerError)
 		return nil, &fullErr
 	}

@@ -87,6 +87,22 @@ func (se SleepEvent) Validate() error {
 	return nil
 }
 
+func (se SleepEvent) ToMap() map[string]interface{} {
+	sleepMap := make(map[string]interface{})
+	sleepMap["_id"] = se.Id
+	sleepMap["user_id"] = se.UserId
+	sleepMap["type"] = se.Type
+	sleepMap["sleep_time"] = se.SleepTime
+	sleepMap["wakeup_time"] = se.WakeupTime
+	sleepMap["wakeup_feeling"] = se.WakeupFeeling
+	sleepMap["sleep_feeling"] = se.SleepFeeling
+	sleepMap["quality_of_sleep"] = se.QualityOfSleep
+	sleepMap["alarm_used"] = se.AlarmUsed
+	sleepMap["own_bed"] = se.OwnBed
+
+	return sleepMap
+}
+
 type FoodData struct {
 	FoodItem	string		`json:"food_item" bson:"food_item"`
 	Quantity	string 		`json:"quantity" bson:"quantity"` // [item:float64][unit:enum]
@@ -125,6 +141,16 @@ func (de DietEvent) Validate() error {
 	return nil
 }
 
+func (de DietEvent) ToMap() map[string]interface{} {
+	dietMap := make(map[string]interface{})
+	dietMap["_id"] = de.Id
+	dietMap["user_id"] = de.UserId
+	dietMap["type"] = de.Type
+	dietMap["time_eaten"] = de.TimeEaten
+	dietMap["items"] = de.Items
+	dietMap["feeling"] = de.Feeling
+	return dietMap
+}
 
 
 

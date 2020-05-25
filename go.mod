@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
+	github.com/fatih/structs v1.1.0
 	github.com/gorilla/mux v1.7.4
 	github.com/stretchr/testify v1.5.1
 	go.mongodb.org/mongo-driver v1.3.3

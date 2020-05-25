@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"errors"
+	"fmt"
 	"github.com/productivity-app-backend/models"
 	"github.com/productivity-app-backend/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,6 +22,7 @@ type IEvent interface {
 	GetType() string
 	GetId() primitive.ObjectID
 	GetUserId() primitive.ObjectID
+	ToMap() map[string]interface{}
 }
 
 // Factory method for creating new IEvents
@@ -142,11 +144,19 @@ func NewSleepEvent(json map[string]interface{}) (*models.SleepEvent, error) {
 
 func NewSleepEventCreated(bsonMap map[string]interface{}) (*models.SleepEvent, error) {
 	log.Println(utils.InfoLog + "EventInterface::NewSleepEventCreated called")
-
+	fmt.Println(bsonMap)
 	var se models.SleepEvent
 
 	uid := bsonMap["user_id"]; if uid != nil {
-		se.UserId.UnmarshalJSON(uid.([]byte))
+		objId, ok := uid.(primitive.Binary); if ok {
+			byteArr := objId.Data
+			se.UserId.UnmarshalJSON(byteArr)
+		} else {
+			se.UserId =  uid.(primitive.ObjectID)
+		}
+
+		//se.UserId =  uid.(primitive.ObjectID)
+		//se.UserId.UnmarshalJSON(uid)
 	} else {
 		err := errors.New("no user_id given")
 		return nil, err
@@ -158,21 +168,28 @@ func NewSleepEventCreated(bsonMap map[string]interface{}) (*models.SleepEvent, e
 		return nil, err
 	}
 	id := bsonMap["_id"]; if id != nil {
-		se.Id.UnmarshalJSON(id.([]byte))
+	//	se.Id.UnmarshalJSON(id.([]byte))
+		//se.Id = id.(primitive.ObjectID)
+		objId, ok := id.(primitive.Binary); if ok {
+			byteArr := objId.Data
+			se.Id.UnmarshalJSON(byteArr)
+		} else {
+			se.Id =  id.(primitive.ObjectID)
+		}
 	} else {
 		err := errors.New("no id given")
 		return nil, err
 	}
 
 	st := bsonMap["sleep_time"]; if st != nil {
-		se.SleepTime = st.(time.Time)
+		se.SleepTime = st.(primitive.DateTime).Time()
 	} else {
 		err := errors.New("no sleep_time given")
 		return nil, err
 	}
 
 	wt := bsonMap["wakeup_time"]; if wt != nil {
-		se.WakeupTime = wt.(time.Time)
+		se.WakeupTime = wt.(primitive.DateTime).Time()
 	} else {
 		err := errors.New("no wakeup_time given")
 		return nil, err
@@ -186,13 +203,13 @@ func NewSleepEventCreated(bsonMap map[string]interface{}) (*models.SleepEvent, e
 		se.SleepFeeling = sf.(string)
 	}
 	qos := bsonMap["quality_of_sleep"]; if qos != nil {
-		se.QualityOfSleep = qos.(int)
+		se.QualityOfSleep = int(qos.(int32))
 	}
 	au := bsonMap["alarm_used"]; if au != nil {
-		se.AlarmUsed = au.(int)
+		se.AlarmUsed = int(au.(int32))
 	}
 	ob := bsonMap["own_bed"]; if ob != nil {
-		se.OwnBed = ob.(int)
+		se.OwnBed = int(ob.(int32))
 	}
 	return &se, nil
 }
